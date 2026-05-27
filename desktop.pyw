@@ -5,32 +5,61 @@ import subprocess
 import sys
 from datetime import datetime
 
+if len(sys.argv) > 2 and sys.argv[1] == '--run-dialog':
+    exec(sys.argv[2])
+    sys.exit(0)
+
 # Ensure the script's directory is in the Python path to find local modules like 'editor.py'
-current_dir = os.path.dirname(os.path.abspath(__file__))
+if getattr(sys, 'frozen', False):
+    current_dir = sys._MEIPASS
+else:
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+
 if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
 
 import editor  # type: ignore
 
 def run_dialog_script(script):
-    # Use python.exe to ensure stdout capture works, but flag it to hide the console window!
+    import tempfile
+    fd, temp_path = tempfile.mkstemp(suffix='.txt')
+    os.close(fd)
+    
+    safe_script = f"""
+import sys
+def print(*args, **kwargs):
+    with open(r'''{temp_path}''', 'w', encoding='utf-8') as _temp_f:
+        _temp_f.write(" ".join(str(a) for a in args))
+""" + script
+
     python_exe = sys.executable
-    if python_exe.endswith('pythonw.exe'):
-        python_exe = python_exe.replace('pythonw.exe', 'python.exe')
+    if hasattr(sys, 'frozen'):
+        cmd = [python_exe, '--run-dialog', safe_script]
+    else:
+        if python_exe.endswith('pythonw.exe'):
+            python_exe = python_exe.replace('pythonw.exe', 'python.exe')
+        cmd = [python_exe, '-c', safe_script]
         
     creationflags = 0
     if os.name == 'nt':
         creationflags = 0x08000000  # CREATE_NO_WINDOW
         
     try:
-        result = subprocess.check_output(
-            [python_exe, '-c', script],
-            text=True,
+        subprocess.check_call(
+            cmd,
+            stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             creationflags=creationflags
-        ).strip()
-        return result if result and result != "None" else None
+        )
+        with open(temp_path, 'r', encoding='utf-8') as f:
+            result = f.read().strip()
+        os.remove(temp_path)
+        return result if result and result != "None" and result != "" else None
     except Exception:
+        if os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except: pass
         return None
 
 class BackendAPI:
@@ -554,7 +583,11 @@ print(file)
 if __name__ == '__main__':
     api = BackendAPI()
     
-    current_dir = os.path.dirname(os.path.abspath(__file__))
+    if getattr(sys, 'frozen', False):
+        current_dir = sys._MEIPASS
+    else:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        
     html_path = os.path.join(current_dir, 'index.html')
     
     webview.create_window('KindredScript Pro', url=html_path, js_api=api, width=1280, height=800)

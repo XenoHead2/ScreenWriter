@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 1. Dialogue & Subtext
 
 Line#40: Benjamin’s dialogue here ("Great. I can’t even do that right. Should’ve picked a higher building.") is extremely on-the-nose. Trust the audience to infer his suicide attempt from the physical context rather than spelling it out explicitly.
@@ -374,4 +375,382 @@ Line#4423: Remove "SCENE 31".
 
 Line#4587: "EXT. LIVING ROOM" is logically incorrect. A living room is an interior space and must be designated as "INT."
 
+=======
+1. Dialogue & Subtext
+
+Line#40: Benjamin’s dialogue here ("Great. I can’t even do that right. Should’ve picked a higher building.") is extremely on-the-nose. Trust the audience to infer his suicide attempt from the physical context rather than spelling it out explicitly.
+
+Line#89-90: Regan’s explanation ("Mental facility. Sort of. Kind of. It’s weird here.") is overly direct exposition. Subtext is lost when characters state the premise of their environment immediately upon meeting.
+
+Line#97-98: Benjamin explaining his exact backstory ("Life got hard. I wanted out. And somebody stopped me.") to a stranger he just met removes all natural character guard and mystery. This information should be slowly drawn out or shown through behavior.
+
+Line#100-101: Regan’s therapeutic advice ("Don’t say that. Depression lies. Trust me, I know.") feels like a contemporary PSA rather than natural dialogue between two institutionalized characters in a surreal setting.
+
+Line#106-108: Regan’s direct confession of her eating disorder and pill usage is a massive backstory dump. This level of vulnerability should be earned over time rather than volunteered instantly in a hallway.
+
+Line#152-154: Otto's line ("You smell like concrete dust and guilt. That’s how you know you're fresh.") is highly expository and on-the-nose, artificially forcing the script's themes onto the characters.
+
+Line#193-196: Regan’s summary of Jace's character ("Crazy? Dangerous? Probably. Mostly just done...") is a clunky "character profile" disguised as natural conversation. Let Jace's actions define him instead of having another character explain his archetype.
+
+Line#232-233: Regan’s dialogue ("The ones in the walls. You’ll hear them soon enough.") is a highly cliché horror trope. It would be far more effective to have her react to a subtle sound rather than state the threat directly.
+
+Line#251-263: The entire therapy circle sequence is too neat. Every character takes turns explicitly stating their exact thematic motivation and backstory in single-sentence soundbites. This strips the scene of realistic group therapy dynamics.
+
+Line#282-285: Jace’s dialogue regarding the "black mold" and "deadbolt" is very clunky exposition designed to explain set anomalies to the audience. He should interact with these anomalies naturally rather than cataloging them.
+
+Line#294-295: Jace's line ("Long enough to know this ain’t about healing.") spells out the exact premise of the script too early and with zero subtext.
+
+Line#415-420: Regan’s breakdown of what the floor circle does ("Some say it answers... wrong people.") is a massive lore dump. This exposition should be discovered actively by the characters during a scene of high tension, not recited calmly.
+
+Line#430-432: Benjamin’s mention of "health inspectors" is overly literal and mundane. It completely undercuts the surreal, nightmarish tone established by the rest of the setting.
+
+Line#464-466: Benjamin’s line ("Are you drugging us? Why can’t I think straight?") is too direct. It is much more compelling to watch his cognitive decline play out through confusing actions rather than having him announce it.
+
+Line#579-581: Jace’s line ("she’s a puppet. Or a radio...") explicitly explains the metaphysical nature of Dr. Anna, killing the mystery for the audience.
+
+Line#638-642: Regan’s dialogue explaining her coping mechanism ("I thought if I kept people laughing...") is too self-aware and psychological. It lacks the natural denial or defensiveness of a real patient.
+
+Line#724-728: Amber’s clinical explanation of Otto's psychological condition ("Otto’s harmless. He’s just tuned...") acts as manual instruction to the audience on how to interpret his character.
+
+Line#750-753: The comedic exchange about the "sentient pudding" is a jarring shift into quirky humor that severely clashes with the psychological horror tone.
+
+Line#826-828: Benjamin pointing out Dr. Anna's formal dialogue style ("You always say hello. Never hi...") is overly meta and on-the-nose.
+
+Line#920-921: Benjamin asking "Is it haunted? I know that sounds crazy" is highly literal. Characters in horror films should resist the supernatural explanation until they are forced to believe it.
+
+Line#950-952: Amber’s line ("I swear they pump pot through the vents...") is an odd, comedic distraction that deflates the tension of the scene.
+
+Line#1170-1171: Dr. Anna stating "Because some places are built to hold, not to heal" explicitly tells the audience the major theme of the story, leaving no room for thematic discovery.
+
+Line#1226-1229: Benjamin speaking to himself out loud to express his confusion ("I don’t know what’s real anymore...") is a lazy dramatic device used to convey internal state.
+
+Line#1278-1280: Amber explaining why they are watching Benjamin based on his redacted files is too expository. The threat of surveillance should be felt, not explained.
+
+Line#1301-1303: Benjamin’s snarky reference to "finger paint" undercuts the stakes of entering a dark, forbidden basement.
+
+Line#1321-1323: Benjamin’s joke about an "ancient burial ground" is an overly familiar, meta horror joke that pulls the reader out of the reality of the scene.
+
+Line#1417-1419: Benjamin literally yelling at the characters to "rein in the crazy" and stop "talking around it" is a frustrating meta-commentary on the script's own stylistic choices.
+
+Line#1555-1556: Benjamin’s repeated demands for answers in Dr. Anna's office have become circular. This is the third time he has yelled the exact same complaints at her, stalling the narrative progression.
+
+Line#1613-1615: Harold’s dialogue ("It’s always the same. The tall ones come...") functions as a dry checklist of horror elements.
+
+Line#1960-1962: Regan’s pop-culture reference to *Buffy the Vampire Slayer* totally breaks immersion and shatters the period-less, claustrophobic atmosphere of the institution.
+
+Line#2121-2122: Benjamin using the modern corporate/bureaucratic phrase "I didn’t consent to this" feels incredibly out of place within the surreal tone.
+
+Line#2203-2205: Benjamin’s line ("It’s not watching us. It’s watching through you.") entirely spells out the major twist of Regan's character with zero room for visual realization.
+
+Line#2440-2443: Amber reciting the rules of a Ouija board ("Break it into seven pieces. Burn it...") reads like she is reading a Wikipedia trivia page rather than acting out of panic.
+
+Line#2574-2577: Amber’s speech about Ouija boards being "doorways" and "garbage disguised as toys" is highly generic, on-the-nose supernatural exposition.
+
+Line#2827-2829: Jace complaining about a lack of coffee during a high-stakes moment of supernatural decay is a classic example of bathos, where inappropriate humor ruins serious tension.
+
+Line#3001: Dr. Anna using the word "spooky" completely deflates her clinical, unsettling presence.
+
+Line#3146-3147: Regan's line ("Or just some scared little girl in a lab coat playing make-believe?") is an incredibly explicit, unearned call-out of the script's final twist.
+
+Line#3195-3197: Benjamin’s comedic complaint about Dr. Anna being "rude" and not saying goodbye during a total breakdown of physical reality is highly tone-deaf.
+
+Line#3280-3285: Harold’s sudden memory recitation ("I wasn’t always old. I had a wife...") right before he is taken is a highly melodramatic, unearned bid for emotional resonance.
+
+Line#3397-3399: Otto’s use of the phrase "catch the crazy" is highly clunky and insensitive, undercutting his tragic character design.
+
+Line#3408-3410: Benjamin's dialogue reference to a "Pinterest board for witchcraft" is highly modern, jarring, and completely breaks the film's timeless aesthetic.
+
+Line#4015-4017: Benjamin recapping the exact events of the previous scene to Regan and Otto drags the pacing to a halt. The characters should react to the emotional fallout of what happened, not describe it.
+
+Line#4073-4082: Malachai’s sudden monologue explaining his entire tragic backstory (his father's gun, his mother's abandonment) is a massive, literal trauma-dump with absolutely no subtext.
+
+Line#4111-4114: Otto's speech about the trenches and the Kaiser is overly theatrical and feels like a cartoonish representation of historical trauma.
+
+Line#4359-4361: Jace’s dialogue ("This place— It doesn’t want to be fixed... That’s the game.") is too explicit. The characters are handing the audience the interpretation of the film on a silver platter.
+
+Line#4506-4508: Regan’s calm, reassuring dialogue ("Benjamin. It's going to be OK!") as she is dragged away by terrifying, faceless monsters is incredibly unnatural and completely deflates the horror of the abduction.
+
+Line#4570-4573: Dr. Anna explaining her entire backstory and the premise of the board ("I opened something... I thought I could talk to them") is a classic "villain explanation" that ruins the dread of the climax.
+
+
+2. Pacing & Action
+
+Line#3-4: The phrase "like he has been crying for hours" is a novelistic description of an internal state. Replace this with physical, filmable indicators (e.g., bloodshot eyes, swollen lids).
+
+Line#7: "Tight chest" is completely unfilmable. Show this physically through his breathing patterns, posture, or hands gripping his sternum.
+
+Line#8: Describing voices as "urgent but unreal" is too subjective. Action lines must remain concrete so the sound designer and actors know exactly what to produce.
+
+Line#20: "The officer’s voice stays calm, trained." This describes an audio quality inside an action line. This should be expressed through parenthetical directions under the character heading, or left to the actor's performance.
+
+Line#32: "Grit and panic claw at his throat" is highly literary and unfilmable. Show us the physical struggle of him choking and gasping instead.
+
+Line#45-47: "smiling like they know him" is a subjective description. It is impossible to direct an actor to "smile like they know him" without more concrete physical context.
+
+Line#126-127: This line ends with an unfinished grammatical fragment: "As they walk down the hallway." It drags the momentum because the sentence never concludes.
+
+Line#184-185: "Or wants to burn it down" is an unfilmable thought. You cannot photograph Jace's internal desire to commit arson; show his aggression through concrete physical details.
+
+Line#199: "Like a séance, not a session." This comparative description is novelistic. Describe the actual layout of the candles and the room directly without comparing it to something else.
+
+Line#511-518: The list of paranoid fragments written on the papers is too dense. Instead of listing every scribble in the action lines, describe the visual chaos of the room generally and focus on one key visual.
+
+Line#519-520: Describing Dr. Anna's eyes as "too distant" and her smile as "too perfect" is highly subjective. Focus on concrete physical performance details.
+
+Line#530: "She says it like she heard it whispered" is a performance direction embedded in an action line. Let the actor find the delivery based on the dialogue.
+
+Line#819-821: "following choreography only she can hear... Sacred." These descriptions are abstract and literary. Focus on the physical, slow, deliberate mechanics of her movements.
+
+Line#1164-1166: "syllables that don’t belong to any recognizable language." This is an unfilmable concept. It is better to write out phonetically what she is saying.
+
+Line#1193: This line ("The flame on the candle flashes blue, then purple.") is a direct, word-for-word repetition of the action line on Line#1192. It must be deleted.
+
+Line#1226: The parenthetical action "(QUIETLY, TO HIMSELF)" overlaps with his dialogue format. It should be kept as a standard parenthetical, and "to himself" is redundant if he is alone.
+
+Line#1428: "Carmilla sips the tea she always seems to have." This is a meta-commentary on the script itself ("always seems to have"). Keep your action lines focused entirely on what is happening in the immediate scene.
+
+Line#1462: "Without warning" is a redundant pacing phrase. If an action happens on the page, the reader already experiences it without warning.
+
+Line#1727-1728: Regan announcing "I'm going to bed until this shit is over" during the preparation for the climax completely kills the narrative momentum and pacing.
+
+Line#2264: "No one follows up." This is a meta-note about the characters' behavior rather than an action. If the characters don't care that Lucy just glitched and vanished, the audience won't either.
+
+Line#2363: "symbols that no one comments on." This is another meta-commentary on the characters' lack of dialogue. Let the action line simply describe the symbols.
+
+Line#2383-2384: "Her reflection’s mouth moves. It speaks silently." This is a visual paradox. It is cleaner to write: "Her reflection mouths silent words."
+
+Line#2419: "the room drops out." This is incredibly vague. Does the floor collapse? Does the light fail? Be specific about the visual effect.
+
+Line#2610-2612: "In a flash hallucination — he sees a hand..." This embedded flashback should be formatted as a quick "FLASH CUT:" or a clear scene transition rather than buried inside a paragraph of prose.
+
+Line#2722: "Smells faintly of disinfectant and lemon polish." Smell is unfilmable. To show this, have a character physically react to the scent, or describe the visual cleanliness of the room.
+
+Line#2863-2865: Jace refusing to help and stating he is just "doing his time" stalls the narrative pacing right before a major sequence. Passive characters drag scenes down.
+
+Line#3033-3034: "an odd mix of adult patience and teenage challenge." This is a psychological essay, not a filmable action description.
+
+Line#3217-3219: "He is usually folding napkins... Tonight Harold sits..." This action line references past off-screen behavior ("He is usually..."), which is impossible to film in a single scene.
+
+Line#3367-3368: "as if something searches through them" is an unfilmable simile. Simply describe the pages flipping rapidly on their own.
+
+Line#3818: "The camera pans wide." Avoid direct camera instructions in a spec script. Describe the scope of the room and the placement of the characters instead.
+
+Line#3822: "CLOSE-UP:" is a technical camera direction that interrupts the narrative flow. Let the director decide the shot size.
+
+Line#3850: "A blink—and it’s empty again." This relies on editing cues rather than active description. Describe the sudden disappearance of the figure.
+
+Line#3972-3974: The comparison of the sound to "a television left on in another room" is overly literary. Describe the sound's pitch and texture directly.
+
+Line#4127-4128: "as if gravity hesitated" is a beautiful but unfilmable literary phrase. Keep your action lines grounded in physical reality.
+
+Line#4231-4232: "thick velvet pressing down on them" is an unfilmable metaphor. Show the characters reacting to a sudden physical heaviness or difficulty breathing.
+
+Line#4281: "The camera holds too long." Do not direct the camera; trust the director to find the visual timing.
+
+Line#4476-4478: "Benjamin and orderly fight. He loses..." This is incredibly lazy, unchoreographed action writing. Action scenes must be described with specific physical movements to maintain tension.
+
+Line#4523-4527: "a howling... guttural scream..." reads like prose. Keep the focus on Benjamin's physical collapse and raw visual grief.
+
+Line#4591-4592: "closely resembles colors and patterns of hospital." This is a dry production note rather than a visual description. Describe the specific colors and patterns of the board to let the reader make the connection.
+
+
+3. Formatting & Clarity
+
+Line#1: "SCENE 1" is non-standard. Screenplays do not use scene numbers unless they are locked shooting scripts.
+
+Line#30: "UNKNOWN TIME" is an invalid scene heading suffix. Use standard elements like DAY, NIGHT, or LATER.
+
+Line#68: The orphan page number "2." is embedded directly in the script text. Clean up these page-number remnants.
+
+Line#104: The page number "3." is printed directly in the text, disrupting the visual flow of the screenplay.
+
+Line#131: Remove "SCENE 2". Scene divisions should be handled purely by scene headings (sluglines).
+
+Line#136: Otto is introduced here but his name is not capitalized. The first introduction of a speaking character must always have their name in ALL CAPS.
+
+Line#170: Carmilla is introduced here without capitalizing her name.
+
+Line#173: "CARMILLA (TO BENJAMIN) (CONT'D)" features a double parenthetical in the character name line, which is incorrect formatting. The direction "to Benjamin" should be in a separate line below her name.
+
+Line#182: Jace is introduced here without capitalized name formatting.
+
+Line#197: Remove "SCENE 3".
+
+Line#222: Remove "SCENE 4".
+
+Line#245: Remove "SCENE 5".
+
+Line#249: The character "DR. ANNA" is suddenly labeled "DOCTOR" here. Character names must remain consistent throughout the script to avoid confusing the cast and crew.
+
+Line#322: "CONT'D — INT. AMBER’S ROOM – NIGHT" is highly non-standard formatting. If a scene is continuous, format it as "INT. AMBER'S ROOM - NIGHT - CONTINUOUS".
+
+Line#337: "UNLATCHES" is capitalized in the middle of a sentence without a clear reason. Reserve capitalization in action lines for sound effects, character introductions, or key props.
+
+Line#360: This is a duplicate "SCENE 6". The scene numbering throughout the script is highly inconsistent and repetitive.
+
+Line#362: "INT. DARK ROOM – NIGHT" is a vague slugline. What kind of room is this? A dark storage closet? A bedroom? Be specific.
+
+Line#366: "INT. UNKNOWN ROOM – CONTINUOUS" is a production nightmare. A location should never be designated as "UNKNOWN" in a scene heading.
+
+Line#454: The name changes back to "DR. ANNA" here, further highlighting the character name inconsistency.
+
+Line#510: "EXTENSION — INT. BENJAMIN’S ROOM – NIGHT" uses "EXTENSION," which is not a standard screenplay scene heading modifier.
+
+Line#591: The parenthetical "(MORE)" is printed on its own line here as an artifact of incorrect page-break formatting.
+
+Line#611: There is a typo in this line: "whipser" should be "whisper."
+
+Line#661: There is a typo in this line: "calm.Have" is missing a space after the period.
+
+Line#695: The "SMALL FIGURE" is introduced here but not capitalized, even though he is later revealed to be Malachai.
+
+Line#783: The phrase "Cut to" is an editing transition that should not be embedded inside an action line. Also, "sitting in the floor" is a grammatical error; it should be "sitting on the floor."
+
+Line#794-795: The double dashes ("—") are formatted with inconsistent spacing, making the action block look messy.
+
+Line#808: There is a typo in this line: "OTTO(HUSHED)" is missing a space between the character name and the parenthetical.
+
+Line#814: Embedding "CUT TO:" as a transition mid-scene is unnecessary and disrupts the visual flow of the screenplay.
+
+Line#872-874: The paragraph ends abruptly with the word "Then", leaving a broken, incomplete sentence fragment.
+
+Line#883: Lucy is introduced here with no description of her age, look, or physical presence.
+
+Line#904: This is a duplicate "SCENE 6" (the first was on Line#360).
+
+Line#1037: "CONTINUED – INT. SERVICE CORRIDOR – NIGHT" uses "CONTINUED" at the start of a scene heading, which is incorrect formatting.
+
+Line#1068: "REGAN (SARCASM)" is incorrect character heading formatting. Adjectives describing delivery must be placed in parentheticals under the character name, not in the name header.
+
+Line#1079: The dialogue "What are you do-" ends with a single hyphen. Interrupted dialogue must conclude with double hyphens ("--") to denote a hard cut-off.
+
+Line#1102: The parenthetical "(To Regan)" is capitalized incorrectly. Directions in parentheticals should be lowercase: "(to Regan)".
+
+Line#1110: "Scene 10" is written in mixed-case, which is inconsistent with the all-caps "SCENE" formatting used elsewhere.
+
+Line#1124: The "(CONT'D)" modifier is typed manually here, which is unnecessary if using modern script formatting software.
+
+Line#1193: The action line is a direct duplicate of the preceding action line on Line#1192, indicating a copy-paste error.
+
+Line#1357: This scene contains a major continuity error. The flashlight dies on Line#1338 and they are in "complete darkness", but here they are suddenly able to see small scratched-out details on Polaroids in a tin box.
+
+Line#1371: The scene heading begins with "CONTINUED", which is unnecessary and incorrect.
+
+Line#1376: The prop is called a "glass-eyed wooden artifact" here, but on Line#1358 it was described as a "wooden, oblong" object. Maintain consistent terminology for key props.
+
+Line#1462: "Without warning" is an empty, passive filler phrase that should be removed from active screenplay lines.
+
+Line#1483: Harold is introduced here without his name being fully capitalized, despite this being his first appearance on page.
+
+Line#1494-1495: Physical actions ("dances around") should never be placed inside a vocal parenthetical. Parentheticals are strictly for vocal delivery.
+
+Line#1536-1538: Carmilla's dialogue is formatted with a parenthetical action inside a dialogue block, which is incorrect.
+
+Line#1585-1587: Double vocal parentheticals are used here, which is non-standard.
+
+Line#1606: The scene heading begins with "CONTINUED" and is followed by "MOMENTS LATER" without a clear geographic change, which is redundant.
+
+Line#1773: There is a typo in this line: "As the exit" should be "As they exit."
+
+Line#1774: There is a typo in this line: "tally's" should be the plural "tallies."
+
+Line#1805: This is a duplicate "SCENE 11" (the first was on Line#1239).
+
+Line#1832: The sound effect "CLICK" is written inline as a narrative word rather than a capitalized sound cue on its own line or clearly marked in the text.
+
+Line#1927: The characters logically choosing to go "right" because Harold says "left is yesterday" is an absurdly fast acceptance of a bizarre rule, hurting clarity.
+
+Line#2017: There is a typo in this line: "weren't dropped" should be "we weren't dropped."
+
+Line#2264: Lucy disappears and the script notes "No one follows up," which is a confusing way to handle a character exit.
+
+Line#2429: The script contains the production text "---------------------CONTINUE HERE---------------------", which must be deleted before submission.
+
+Line#2430: This is a duplicate "SCENE 18".
+
+Line#2455-2456: Pauses and ellipsis dots should not be formatted inside character parentheticals.
+
+Line#2549: This is a duplicate "SCENE 16".
+
+Line#2610-2612: The hallucination of the buried hand is crammed into a standard action paragraph, creating visual confusion.
+
+Line#2666: This is a duplicate "SCENE 17".
+
+Line#2742: This is a duplicate "SCENE 18".
+
+Line#2842: The character name header "JACE (INTERRUPTING) —" contains a double dash and an action. Keep character name headers clean.
+
+Line#2868: Remove "SCENE 19".
+
+Line#2942: The parenthetical "(TEARS IN HER VOICE)" is too descriptive. Use simple vocal directions like "(choking up)" or "(tearing up)".
+
+Line#2966: Remove "SCENE 20".
+
+Line#3040: The heading "AFTERMATH" is a non-standard transition element that has no place in a professional screenplay layout.
+
+Line#3064: Remove "SCENE 21".
+
+Line#3127: Physical directions are placed in the character header line rather than below the name.
+
+Line#3160: Physical directions are placed in the character header line.
+
+Line#3202: Remove "SCENE 22".
+
+Line#3213: The word "eventually" is a passive transition that drags the immediacy of the scene.
+
+Line#3263: There is a typo in this line: "napkin had was holding" should be "napkin he was holding."
+
+Line#3269: The dialogue contains double question marks ("OK??"). Screenplay dialogue should stick to standard punctuation.
+
+Line#3315: Remove "SCENE 23".
+
+Line#3442: There is a typo in this line: "Carmilla mutter" should be "Carmilla mutters."
+
+Line#3458: Parenthetical directions are placed directly in Jace's name header line.
+
+Line#3485: Remove "SCENE 24".
+
+Line#3583: Remove "SCENE 25".
+
+Line#3595: The dialogue is written in ALL CAPS. Capitalization in dialogue should be reserved for rare, extreme moments of screaming, as it is difficult to read.
+
+Line#3633: Parenthetical directions are placed directly in Regan's name header line.
+
+Line#3698: Remove "SCENE 26".
+
+Line#3794: Parenthetical directions are placed directly in Otto's name header line.
+
+Line#3826: "INT. VARIOUS LOCATIONS" is an incredibly vague and unproducible scene heading. Each distinct room must have its own specific slugline.
+
+Line#3852: There is a typo in this line: "backing in to" should be "backing into."
+
+Line#3880: Remove "SCENE 27".
+
+Line#3946: Parenthetical directions are placed in the character name line.
+
+Line#3960: Parenthetical directions are placed in the character name line.
+
+Line#3964: Parenthetical directions are placed in the character name line.
+
+Line#4059: All-caps dialogue is used here unnecessarily.
+
+Line#4084: Remove "SCENE 28".
+
+Line#4108: Otto's dialogue "LIES" is capitalized in a way that suggests a cartoonish delivery.
+
+Line#4139: A physical direction is placed directly in the dialogue line.
+
+Line#4174: The stray "(MORE)" formatting error appears again, disrupting the page layout.
+
+Line#4202: Remove "SCENE 29".
+
+Line#4291: Remove "SCENE 30".
+
+Line#4332-4333: Multiple question marks are used in Benjamin's dialogue.
+
+Line#4423: Remove "SCENE 31".
+
+Line#4587: "EXT. LIVING ROOM" is logically incorrect. A living room is an interior space and must be designated as "INT."
+
+>>>>>>> 439014ec9201d54f31433dd4d027e4c799e9f029
 Line#4599: Presenting "3 ENDING OPTIONS" in a master screenplay draft is highly unprofessional. Choose your strongest creative path and present one definitive ending.
