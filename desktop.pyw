@@ -5,6 +5,13 @@ import subprocess
 import sys
 from datetime import datetime
 
+# Ensure the script's directory is in the Python path to find local modules like 'editor.py'
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
+import editor
+
 def run_dialog_script(script):
     # Use python.exe to ensure stdout capture works, but flag it to hide the console window!
     python_exe = sys.executable
@@ -34,6 +41,8 @@ class BackendAPI:
             os.makedirs(self.backup_dir)
             
         self.settings_file = os.path.join(self.backup_dir, "settings.json")
+        self.personal_dict = set()
+        self.spell = None
         
     def load_settings(self):
         settings = {}
@@ -76,20 +85,20 @@ print(file)
     def save_project_dialog(self, content, project_name="Untitled Project"):
         safe_name = "".join(c for c in project_name if c not in r'\/:*?"<>|')
         script = f"""
-import tkinter as tk
-from tkinter import filedialog
-root = tk.Tk()
-root.withdraw()
-root.attributes('-topmost', True)
-file = filedialog.asksaveasfilename(
-    parent=root, 
-    title="Save Project",
+    import tkinter as tk
+    from tkinter import filedialog
+    root = tk.Tk()
+    root.withdraw()
+    root.attributes('-topmost', True)
+    file = filedialog.asksaveasfilename(
+    parent=root,
+    title="Save Project As",
     initialfile="{safe_name}.ksp",
     defaultextension=".ksp",
     filetypes=[('KindredScript Project', '*.ksp')]
-)
-print(file)
-"""
+    )
+    print(file)
+    """
         filepath = run_dialog_script(script)
         if filepath and filepath != "None":
             try:
@@ -100,6 +109,13 @@ print(file)
                 return f"Error: {str(e)}"
         return None
 
+    def save_project(self, content, filepath):
+        try:
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.write(content)
+            return filepath
+        except Exception as e:
+            return f"Error: {str(e)}"
     def open_project_dialog(self):
         script = """
 import tkinter as tk
@@ -213,7 +229,10 @@ print(file)
         except Exception as e:
             return f"Error: {str(e)}"
 
-    def export_pdf(self, lines, project_name="Screenplay"):
+    def export_pdf(self, lines, project_name="Screenplay", export_config=None):
+        if export_config is None:
+            export_config = {}
+            
         """Opens a native save dialog and generates a formatted PDF."""
         filepath = self._safe_save_dialog(f'{project_name}.pdf', '.pdf', [('PDF Files', '*.pdf')])
         if not filepath:
@@ -225,26 +244,86 @@ print(file)
             return "Missing library. Please run: pip install fpdf"
             
         try:
-            pdf = fpdf.FPDF(unit='in', format='Letter')
-            pdf.add_page()
+            show_numbers = export_config.get("showPageNumbers", False)
+            start_page = export_config.get("startPageNumber", 2)
+            title_lines = export_config.get("titleLines", [])
+
+            class ScreenplayPDF(fpdf.FPDF):
+                def __init__(self, show_page_numbers=False, start_page=2):
+                    super().__init__(unit='in', format='Letter')
+                    self.show_page_numbers = show_page_numbers
+                    self.current_script_page = start_page
+                    self.in_title_page = True
+
+                def header(self):
+                    if not self.in_title_page and self.show_page_numbers:
+                        self.set_font("Courier", size=12)
+                        self.set_xy(7.0, 0.5)
+                        self.cell(w=0.5, h=0.16, txt=f"{self.current_script_page}.", align='R')
+                        self.current_script_page += 1
+                        self.set_margins(left=1.5, top=1.0, right=1.0)
+                        self.set_xy(1.5, 1.0)
+
+            pdf = ScreenplayPDF(show_page_numbers=show_numbers, start_page=start_page)
             pdf.set_margins(left=1.5, top=1.0, right=1.0)
             pdf.set_auto_page_break(auto=True, margin=1.0)
+            
+            def sanitize_text(t):
+                t = t.replace('\u2018', "'").replace('\u2019', "'")
+                t = t.replace('\u201c', '"').replace('\u201d', '"')
+                t = t.replace('\u2013', '-').replace('\u2014', '--')
+                t = t.replace('\u2026', '...')
+                return t.encode('latin-1', 'replace').decode('latin-1')
+
+            if title_lines:
+                pdf.add_page()
+                pdf.set_font("Courier", size=12)
+                
+                # Simple vertical centering approximation
+                total_lines = len(title_lines)
+                if total_lines > 0:
+                    start_y = max(1.0, (11.0 - (total_lines * 0.16)) / 2.0)
+                    pdf.set_y(start_y)
+                
+                for line in title_lines:
+                    text = line.get('text', '').replace('\u200b', '').strip()
+                    text = sanitize_text(text)
+                    
+                    if not text:
+                        pdf.ln(0.16)
+                    else:
+                        pdf.set_x(1.5)
+                        pdf.multi_cell(w=5.5, h=0.16, txt=text, align='C')
+
+            pdf.in_title_page = False
+            pdf.add_page()
             pdf.set_font("Courier", size=12)
             
+            last_type = None
+
             for line in lines:
                 ltype = line.get('type', 'action')
                 text = line.get('text', '').replace('\u200b', '').strip()
                 
-                # Sanitize common unicode characters that break basic FPDF encoding
-                text = text.replace('\u2018', "'").replace('\u2019', "'")
-                text = text.replace('\u201c', '"').replace('\u201d', '"')
-                text = text.replace('\u2013', '-').replace('\u2014', '--')
-                text = text.replace('\u2026', '...')
-                text = text.encode('latin-1', 'replace').decode('latin-1')
-                
-                if not text:
-                    pdf.ln(0.16)
+                text = sanitize_text(text)
+
+                if ltype == 'page-break':
+                    pdf.add_page()
+                    last_type = None
                     continue
+
+                if not text:
+                    # Ignore empty editor lines to enforce strict standard screenplay spacing mathematically
+                    continue
+
+                # Smart vertical formatting: 1 blank line before everything except Dialogue & Parentheticals
+                needs_space = False
+                if last_type is not None:
+                    if ltype not in ['dialogue', 'parenthetical']:
+                        needs_space = True
+                        
+                if needs_space and pdf.get_y() > 1.1:
+                    pdf.ln(0.16)
 
                 current_y = pdf.get_y()
                 if line.get('revision', False):
@@ -254,30 +333,31 @@ print(file)
                     pdf.set_y(current_y) # reset Y so the main line prints correctly
                     pdf.set_font("Courier", style='', size=12)
 
-                if ltype == 'page-break':
-                    pdf.add_page()
-                    continue
-                    
                 if ltype == 'scene-heading':
-                    pdf.set_x(1.5); pdf.multi_cell(w=6.0, h=0.16, txt=text.upper()); pdf.ln(0.16)
+                    pdf.set_x(1.5); pdf.multi_cell(w=6.0, h=0.16, txt=text.upper())
                 elif ltype == 'character':
                     pdf.set_x(3.5); pdf.multi_cell(w=4.0, h=0.16, txt=text.upper())
                 elif ltype == 'parenthetical':
                     text = text.replace('(', '').replace(')', '')
                     pdf.set_x(3.1); pdf.multi_cell(w=2.5, h=0.16, txt=f"({text})")
                 elif ltype == 'dialogue':
-                    pdf.set_x(2.5); pdf.multi_cell(w=3.5, h=0.16, txt=text); pdf.ln(0.16)
+                    pdf.set_x(2.5); pdf.multi_cell(w=3.5, h=0.16, txt=text)
                 elif ltype == 'transition':
-                    pdf.set_x(5.5); pdf.multi_cell(w=2.0, h=0.16, txt=text.upper()); pdf.ln(0.16)
+                    pdf.set_x(5.5); pdf.multi_cell(w=2.0, h=0.16, txt=text.upper())
                 else: # Action, Shot, etc.
-                    pdf.set_x(1.5); pdf.multi_cell(w=6.0, h=0.16, txt=text); pdf.ln(0.16)
-                    
+                    pdf.set_x(1.5); pdf.multi_cell(w=6.0, h=0.16, txt=text)
+                
+                last_type = ltype
+
             pdf.output(filepath)
             return f"Exported to: {filepath}"
         except Exception as e:
             return f"Export Error: {str(e)}"
 
-    def export_fdx(self, lines, project_name="Screenplay"):
+    def export_fdx(self, lines, project_name="Screenplay", export_config=None):
+        if export_config is None:
+            export_config = {}
+            
         """Opens a native save dialog and generates a Final Draft (.fdx) file."""
         filepath = self._safe_save_dialog(f'{project_name}.fdx', '.fdx', [('Final Draft Files', '*.fdx')])
         if not filepath:
@@ -300,8 +380,8 @@ print(file)
                     continue
 
                 if not text:
-                    ET.SubElement(ET.SubElement(content, "Paragraph", Type="Action"), "Text").text = ""
                     continue
+                    
                 if ltype == 'parenthetical': text = f"({text.replace('(', '').replace(')', '')})"
                 elif ltype in ['scene-heading', 'character', 'transition']: text = text.upper()
                 
@@ -314,7 +394,10 @@ print(file)
         except Exception as e:
             return f"Export Error: {str(e)}"
 
-    def export_writersduet(self, lines, project_name="Screenplay"):
+    def export_writersduet(self, lines, project_name="Screenplay", export_config=None):
+        if export_config is None:
+            export_config = {}
+            
         """Opens a native save dialog and generates a WriterDuet-compatible Fountain file."""
         filepath = self._safe_save_dialog(f'{project_name}.fountain', '.fountain', [('WriterDuet/Fountain Files', '*.fountain')])
         if not filepath:
@@ -325,9 +408,12 @@ print(file)
                 for line in lines:
                     ltype = line.get('type', 'action')
                     text = line.get('text', '').replace('\u200b', '').strip()
-                    if not text: f.write('\n'); continue
+                    
+                    if not text: 
+                        continue
+                        
                     if ltype == 'page-break': f.write('===\n\n')
-                    if ltype == 'scene-heading': f.write(text.upper() + '\n\n')
+                    elif ltype == 'scene-heading': f.write(text.upper() + '\n\n')
                     elif ltype == 'character': f.write(text.upper() + '\n')
                     elif ltype == 'parenthetical': f.write(f"({text.replace('(', '').replace(')', '')})\n")
                     elif ltype == 'dialogue': f.write(text + '\n\n')
@@ -336,6 +422,101 @@ print(file)
             return f"Exported to: {filepath}"
         except Exception as e:
             return f"Export Error: {str(e)}"
+
+    def get_spell_suggestions(self, word):
+        try:
+            from spellchecker import SpellChecker
+        except ImportError:
+            return {"error": "Please run: pip install pyspellchecker"}
+            
+        if self.spell is None:
+            self.spell = SpellChecker()
+            dict_path = os.path.join(self.backup_dir, "personal_dict.txt")
+            if os.path.exists(dict_path):
+                with open(dict_path, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        w = line.strip().lower()
+                        if w:
+                            self.personal_dict.add(w)
+            self.spell.word_frequency.load_words(list(self.personal_dict))
+
+        import re
+        word_clean = re.sub(r'[^\w\s]', '', word.lower())
+        if not word_clean:
+            return {"misspelled": False, "suggestions": []}
+
+        if word_clean in self.personal_dict or word_clean in self.spell:
+            return {"misspelled": False, "suggestions": []}
+            
+        candidates = self.spell.candidates(word_clean)
+        cand_list = []
+        if candidates:
+            cand_list = list(candidates)[:5]
+            if word[0].isupper():
+                cand_list = [c.capitalize() for c in cand_list]
+        return {"misspelled": True, "suggestions": cand_list}
+
+    def check_document_spelling(self, text):
+        try:
+            from spellchecker import SpellChecker
+        except ImportError:
+            return {"error": "Please run: pip install pyspellchecker"}
+            
+        if self.spell is None:
+            self.spell = SpellChecker()
+            dict_path = os.path.join(self.backup_dir, "personal_dict.txt")
+            if os.path.exists(dict_path):
+                with open(dict_path, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        w = line.strip().lower()
+                        if w: self.personal_dict.add(w)
+            self.spell.word_frequency.load_words(list(self.personal_dict))
+
+        import re
+        words = re.findall(r"\b[a-zA-Z\']+\b", text)
+        unique_words = list(dict.fromkeys(words)) # Removes duplicates while preserving order
+        
+        misspelled = []
+        for w in unique_words:
+            w_clean = re.sub(r'[^\w\s]', '', w.lower())
+            if not w_clean or w_clean in self.personal_dict or w_clean in self.spell:
+                continue
+            
+            misspelled.append({"word": w, "suggestions": self.get_spell_suggestions(w).get("suggestions", [])})
+        return {"error": None, "misspelled": misspelled}
+
+    def add_to_dictionary(self, word):
+        import re
+        word_clean = re.sub(r'[^\w\s]', '', word.lower())
+        if not word_clean:
+            return "Invalid word"
+            
+        dict_path = os.path.join(self.backup_dir, "personal_dict.txt")
+        with open(dict_path, 'a', encoding='utf-8') as f:
+            f.write(word_clean + "\n")
+            
+        if self.spell is not None:
+            self.personal_dict.add(word_clean)
+            self.spell.word_frequency.load_words([word_clean])
+            
+        return f"Added '{word}' to dictionary."
+
+    def export_ai_report(self, content, project_name="Untitled Project"):
+        filepath = self._safe_save_dialog(f'{project_name}_AI_Report.txt', '.txt', [('Text Files', '*.txt')])
+        if not filepath:
+            return "Export cancelled."
+        try:
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(content)
+            return f"Exported to: {filepath}"
+        except Exception as e:
+            return f"Export Error: {str(e)}"
+
+    def analyze_script(self, paragraphs):
+        return editor.analyze_script_context(paragraphs)
+        
+    def auto_fix_script(self, selected_text):
+        return editor.auto_fix_script(selected_text)
 
 if __name__ == '__main__':
     api = BackendAPI()

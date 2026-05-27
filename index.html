@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <title>KindredScript - Pro Screenplay Editor</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Automatically adds standard screenplay vertical spacing above Scene Headings in the visual editor */
+        #editor p.scene-heading {
+            margin-top: 1.5em;
+        }
+    </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 </head>
 <body>
@@ -17,6 +23,7 @@
                 <div class="dropdown-item"><span>Open Recent &gt;</span></div>
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-item" id="file-menu-save"><span>Save Project</span><span class="hotkey-text">Ctrl-S</span></div>
+                <div class="dropdown-item" id="file-menu-save-as"><span>Save Project As...</span></div>
                 <div class="dropdown-item" id="file-menu-backups"><span>Configure Backups & Auto-Save</span><span class="hotkey-text">Ctrl-Shift-S</span></div>
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-item" id="file-menu-rename"><span>Rename Project...</span></div>
@@ -45,6 +52,8 @@
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-item" id="edit-select-all"><span>Select All</span><span class="hotkey-text">Ctrl-A</span></div>
                 <div class="dropdown-divider"></div>
+                <div class="dropdown-item" id="edit-find-replace"><span>Find & Replace...</span><span class="hotkey-text">Ctrl-F</span></div>
+                <div class="dropdown-divider"></div>
                 <div class="dropdown-item" id="edit-page-break"><span>Insert Page Break</span><span class="hotkey-text">Ctrl-Enter</span></div>
             </div>
         </div>
@@ -52,13 +61,11 @@
         <div class="menu-item dropdown" id="view-menu">View
             <div class="dropdown-content">
                 <div class="dropdown-item" id="view-toggle-focus"><span><span id="focus-mode-check" style="visibility:hidden; margin-right:6px;">✔</span>Toggle Focus Mode</span><span class="hotkey-text">F11</span></div>
+                <div class="dropdown-item" id="view-toggle-page-numbers"><span><span id="page-numbers-check" style="visibility:hidden; margin-right:6px;">✔</span>Page Numbers</span></div>
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-item"><span>Full Screen</span></div>
-                <div class="dropdown-item"><span>Menu Bar</span></div>
-                <div class="dropdown-item"><span>Format Buttons</span></div>
-                <div class="dropdown-item"><span>Page Breaks</span></div>
-                <div class="dropdown-item"><span>Page Count</span></div>
-                <div class="dropdown-item"><span>Word Count</span></div>
+                <div class="dropdown-item" id="view-toggle-format-btns"><span><span id="format-btns-check" style="visibility:visible; margin-right:6px;">✔</span>Format Buttons</span></div>
+                <div class="dropdown-item" id="view-toggle-word-count"><span><span id="word-count-check" style="visibility:visible; margin-right:6px;">✔</span>Word Count</span></div>
                 <div class="dropdown-item"><span>Mind Map</span></div>
             </div>
         </div>
@@ -70,21 +77,20 @@
         </div>
         <div class="menu-item dropdown" id="tools-menu">Tools
             <div class="dropdown-content">
-                <div class="dropdown-item"><span>Rename Character</span></div>
-                <div class="dropdown-item"><span>Check Spelling & Grammar</span></div>
-                <div class="dropdown-item"><span>Dialogue Filter (show only dialogue)</span></div>
-                <div class="dropdown-item"><span>Non-Dialogue Filter (show only non dialogue)</span></div>
+                <div class="dropdown-item" id="tools-rename-character"><span>Rename Character</span></div>
+                <div class="dropdown-item" id="tools-check-spelling"><span>Check Spelling</span></div>
+                <div class="dropdown-item" id="tools-filter-dialogue"><span><span id="filter-dialogue-check" style="visibility:hidden; margin-right:6px;">✔</span>Dialogue Filter</span></div>
+                <div class="dropdown-item" id="tools-filter-non-dialogue"><span><span id="filter-non-dialogue-check" style="visibility:hidden; margin-right:6px;">✔</span>Non-Dialogue Filter</span></div>
+                <div class="dropdown-item" id="tools-char-filter"><span>Character Filter</span></div>
                 <div class="dropdown-item"><span>List of Shots</span></div>
-                <div class="dropdown-item"><span>Locations & Scenes</span></div>
             </div>
         </div>
         <div class="menu-item dropdown" id="reports-menu">Reports
             <div class="dropdown-content">
                 <div class="dropdown-item"><span>Document Statistics</span></div>
                 <div class="dropdown-item"><span>Check Formatting</span></div>
-                <div class="dropdown-item"><span>Locations & Scenes</span></div>
-                <div class="dropdown-item"><span>Non-Dialogue Filter (hide all dialogue)</span></div>
-                <div class="dropdown-item"><span>Character Filter</span></div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item" id="reports-ai-analysis"><span><span style="margin-right:6px;">🤖</span>AI Script Analysis</span></div>
             </div>
         </div>
         <div class="menu-item dropdown" id="revisions-menu">Revisions
@@ -109,51 +115,64 @@
 
     <div class="main-container">
         <div class="icon-nav">
-            <div class="icon-nav-item active"><span class="icon-nav-icon">📋</span>Project</div>
+            <div class="icon-nav-item active" id="nav-project-btn"><span class="icon-nav-icon">📋</span>Project</div>
+            <div class="icon-nav-item" id="nav-scenes-btn"><span class="icon-nav-icon">🎬</span>Scenes</div>
             <div class="icon-nav-item"><span class="icon-nav-icon">📇</span>Cards</div>
             <div class="icon-nav-item"><span class="icon-nav-icon">💬</span>Comments</div>
         </div>
         
         <div class="project-sidebar">
-            <div class="sidebar-header">
-                <span id="project-name-display">⬅ &nbsp; Quiet Hours 4th Draft</span>
-                <span style="cursor:pointer">⋮</span>
+            <div id="sidebar-project-view" style="display: flex; flex-direction: column; flex: 1; height: 100%;">
+                <div class="sidebar-header">
+                    <span id="project-name-display">⬅ &nbsp; Quiet Hours 4th Draft</span>
+                    <span style="cursor:pointer">⋮</span>
+                </div>
+                
+                <div class="sidebar-section">Project Documents</div>
+                <div id="project-documents-list">
+                    <div class="sidebar-item active" data-docname="Default Document">
+                        <span class="sidebar-icon">📄</span> Default Document <span style="margin-left:auto; background-color:#10b981; color:white; padding:2px 4px; font-size:9px; border-radius:3px; font-weight:bold;">SX</span>
+                    </div>
+                    <div class="sidebar-item" data-docname="Private Pad">
+                        <span class="sidebar-icon">🔒</span> Private Pad
+                    </div>
+                    <div class="sidebar-item" data-docname="Title Page">
+                        <span class="sidebar-icon">📑</span> Title Page
+                    </div>
+                    <div class="sidebar-item" id="add-document-btn">
+                        <span class="sidebar-icon">➕</span> Add Document
+                    </div>
+                </div>
+
+                <div class="sidebar-spacer"></div>
+
+                <div class="sidebar-item" id="import-btn">
+                    <span class="sidebar-icon">📥</span> Import
+                </div>
+                <div class="sidebar-item" id="export-pdf-sidebar-btn">
+                    <span class="sidebar-icon">📄</span> Quick Export (PDF)
+                </div>
+                <div class="sidebar-item" id="sidebar-open-project">
+                    <span class="sidebar-icon">📂</span> Open Portfolio <span style="margin-left:auto; font-size:10px; color:#5c6b7a">Ctrl+O</span>
+                </div>
+                <div class="sidebar-item" id="btn-external-backups">
+                    <span class="sidebar-icon">💽</span> Configure Backups
+                </div>
+                
+                <div class="sidebar-footer">
+                    <div style="margin-bottom:6px; display:flex; align-items:center;"><div class="sync-dot" style="margin-right:6px; background-color:gray;"></div> <span style="color:var(--text-muted)">Last saved online: 11:59 AM</span></div>
+                    <div style="display:flex; align-items:center;"><div class="sync-dot" style="margin-right:6px;"></div> <span style="color:var(--text-muted)">Last saved offline: 11:57 AM</span></div>
+                </div>
             </div>
             
-            <div class="sidebar-section">Project Documents</div>
-            <div id="project-documents-list">
-                <div class="sidebar-item active" data-docname="Default Document">
-                    <span class="sidebar-icon">📄</span> Default Document <span style="margin-left:auto; background-color:#10b981; color:white; padding:2px 4px; font-size:9px; border-radius:3px; font-weight:bold;">SX</span>
+            <div id="sidebar-scenes-view" style="display: none; flex-direction: column; flex: 1; height: 100%;">
+                <div class="sidebar-header">
+                    <span>📍 Locations & Scenes</span>
+                    <span style="cursor:pointer" onclick="buildScenesList()" title="Refresh Scenes">↻</span>
                 </div>
-                <div class="sidebar-item" data-docname="Private Pad">
-                    <span class="sidebar-icon">🔒</span> Private Pad
+                <div id="scenes-list" style="flex: 1; overflow-y: auto;">
+                    <!-- Scenes injected here -->
                 </div>
-                <div class="sidebar-item" data-docname="Title Page">
-                    <span class="sidebar-icon">📑</span> Title Page
-                </div>
-                <div class="sidebar-item" id="add-document-btn">
-                    <span class="sidebar-icon">➕</span> Add Document
-                </div>
-            </div>
-
-            <div class="sidebar-spacer"></div>
-
-            <div class="sidebar-item" id="import-btn">
-                <span class="sidebar-icon">📥</span> Import
-            </div>
-            <div class="sidebar-item" id="export-pdf-sidebar-btn">
-                <span class="sidebar-icon">📄</span> Quick Export (PDF)
-            </div>
-            <div class="sidebar-item" id="sidebar-open-project">
-                <span class="sidebar-icon">📂</span> Open Portfolio <span style="margin-left:auto; font-size:10px; color:#5c6b7a">Ctrl+O</span>
-            </div>
-            <div class="sidebar-item" id="btn-external-backups">
-                <span class="sidebar-icon">💽</span> Configure Backups
-            </div>
-            
-            <div class="sidebar-footer">
-                <div style="margin-bottom:6px; display:flex; align-items:center;"><div class="sync-dot" style="margin-right:6px; background-color:gray;"></div> <span style="color:var(--text-muted)">Last saved online: 11:59 AM</span></div>
-                <div style="display:flex; align-items:center;"><div class="sync-dot" style="margin-right:6px;"></div> <span style="color:var(--text-muted)">Last saved offline: 11:57 AM</span></div>
             </div>
         </div>
         <div class="editor-area">
@@ -205,6 +224,19 @@
             <span id="syncText">Local Backup Active</span>
         </div>
     </div>
+
+        <!-- Right-side AI Report Panel -->
+        <div class="ai-report-sidebar" id="ai-report-sidebar">
+            <div class="sidebar-header">
+                <span>🤖 AI Script Analysis</span>
+                <div>
+                    <span id="btn-export-ai-report" style="cursor:pointer; margin-right: 15px; font-size: 11px; background: #1b8adb; padding: 3px 8px; border-radius: 3px; color: white;" title="Export Report as Text">💾 Export</span>
+                    <span id="btn-close-ai-sidebar" style="cursor:pointer" title="Close Panel">❌</span>
+                </div>
+            </div>
+            <div id="ai-analysis-content" style="flex: 1; overflow-y: auto; padding: 15px; font-size: 12px; line-height: 1.6; white-space: pre-wrap; color: #e2e8f0; background: #12181f;">
+                <!-- Report injected here -->
+            </div>
         </div>
     </div>
 
@@ -287,11 +319,44 @@
 
     <!-- Custom Context Menu -->
     <div id="context-menu" class="context-menu">
+        <div id="spell-suggestions-container" style="display:none;">
+            <!-- Suggestions injected here -->
+            <div class="dropdown-divider"></div>
+        </div>
+        <div class="context-menu-item" id="ctx-ai-fix" style="color: #10b981; font-weight: bold;">✨ AI Auto-Fix Selection</div>
+        <div class="dropdown-divider"></div>
         <div class="context-menu-item" id="ctx-cut">Cut</div>
         <div class="context-menu-item" id="ctx-copy">Copy</div>
         <div class="context-menu-item" id="ctx-paste">Paste</div>
         <div class="dropdown-divider"></div>
         <div class="context-menu-item" id="ctx-select-all">Select All</div>
+    </div>
+
+    <!-- Spellcheck Modal -->
+    <div id="spellcheck-modal" class="modal-overlay" style="display: none; background-color: transparent; pointer-events: none;">
+        <div class="modal-content" id="spellcheck-content" style="width: 400px; pointer-events: auto; position: absolute; top: 10%; right: 5%; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
+            <h2 id="spellcheck-header" style="cursor: move; user-select: none;">📝 Check Spelling</h2>
+            <div id="spellcheck-complete" style="display:none; text-align:center; padding: 20px;">
+                <p>Spell check complete!</p>
+                <button class="modal-btn" onclick="document.getElementById('spellcheck-modal').style.display='none'" style="margin-top:15px; width:100%">Close</button>
+            </div>
+            <div id="spellcheck-active">
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 5px;">Not in dictionary:</p>
+                <div id="spellcheck-word" style="font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #ef4444;">Word</div>
+                
+                <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 5px;">Suggestions:</p>
+                <select id="spellcheck-suggestions" size="5" style="width: 100%; background: #1a232c; color: white; border: 1px solid #36424e; border-radius: 4px; padding: 5px; margin-bottom: 5px; outline: none;"></select>
+                <input type="text" id="spellcheck-custom-correction" placeholder="Or type correction here..." style="width: 100%; background: #1a232c; color: white; border: 1px solid #36424e; border-radius: 4px; padding: 6px; margin-bottom: 15px; outline: none; box-sizing: border-box;">
+                
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button id="btn-spell-ignore" class="modal-btn" style="flex: 1; background-color: #4a5568;">Ignore</button>
+                    <button id="btn-spell-next" class="modal-btn" style="flex: 1; background-color: #4a5568;">Next</button>
+                    <button id="btn-spell-add" class="modal-btn" style="flex: 1; background-color: #1b8adb;">Add to Dict</button>
+                    <button id="btn-spell-change" class="modal-btn" style="flex: 1; background-color: #10b981;">Change</button>
+                </div>
+                <button class="modal-btn" onclick="document.getElementById('spellcheck-modal').style.display='none'" style="width: 100%; background-color: transparent; border: 1px solid #36424e; margin-top: 15px;">Cancel</button>
+            </div>
+        </div>
     </div>
 
     <!-- Snapshots Modal -->
@@ -308,6 +373,85 @@
             </div>
             <button id="btn-close-snapshots" class="modal-btn" style="background-color: #4a5568; margin-top: 10px; width: 100%;">Close</button>
         </div>
+    </div>
+
+    <!-- Exit Focus Mode Button -->
+    <div id="exit-focus-mode-btn" class="exit-focus-btn" title="Exit Focus Mode (F11)">
+        ❌ Exit Focus Mode
+    </div>
+
+    <!-- Rename Character Modal -->
+    <div id="rename-char-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="width: 400px;">
+            <h2>✏️ Rename Character</h2>
+            <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 15px;">Select a character to rename throughout the current document.</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
+                <label style="font-size: 12px; color: var(--text-muted);">Current Name:</label>
+                <select id="rename-char-old" style="background: #1a232c; border: 1px solid #36424e; color: white; padding: 8px; border-radius: 4px; outline: none;"></select>
+                
+                <label style="font-size: 12px; color: var(--text-muted);">New Name:</label>
+                <input type="text" id="rename-char-new" placeholder="e.g., JOHN" style="background: #1a232c; border: 1px solid #36424e; color: white; padding: 8px; border-radius: 4px; outline: none; text-transform: uppercase;">
+                
+                <label style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; cursor: pointer; margin-top: 5px;">
+                    <input type="checkbox" id="rename-char-all-lines" checked>
+                    Smart-rename references in Action & Dialogue lines
+                </label>
+            </div>
+
+            <button id="btn-apply-rename" class="modal-btn" style="background-color: #10b981; width: 100%; margin-bottom: 10px;">Rename Character</button>
+            <button id="btn-close-rename-char" class="modal-btn" style="background-color: #4a5568; width: 100%;">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Find & Replace Modal -->
+    <div id="find-replace-modal" class="modal-overlay" style="display: none; background-color: transparent; pointer-events: none;">
+        <div class="modal-content" id="find-replace-content" style="width: 400px; pointer-events: auto; position: absolute; top: 15%; right: 5%; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
+            <h2 id="find-replace-header" style="cursor: move; user-select: none;">🔍 Find & Replace</h2>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
+                <label style="font-size: 12px; color: var(--text-muted);">Find:</label>
+                <input type="text" id="find-input" placeholder="Text to find..." style="background: #1a232c; border: 1px solid #36424e; color: white; padding: 8px; border-radius: 4px; outline: none;">
+                
+                <label style="font-size: 12px; color: var(--text-muted);">Replace with:</label>
+                <input type="text" id="replace-input" placeholder="Replacement text..." style="background: #1a232c; border: 1px solid #36424e; color: white; padding: 8px; border-radius: 4px; outline: none;">
+                
+                <label style="font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; cursor: pointer; margin-top: 5px;">
+                    <input type="checkbox" id="find-match-case">
+                    Match case
+                </label>
+            </div>
+
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button id="btn-find-next" class="modal-btn" style="flex: 1; background-color: #1b8adb;">Find Next</button>
+                <button id="btn-replace" class="modal-btn" style="flex: 1; background-color: #f59e0b;">Replace</button>
+                <button id="btn-replace-all" class="modal-btn" style="flex: 1; background-color: #ef4444;">Replace All</button>
+            </div>
+            <button class="modal-btn" onclick="document.getElementById('find-replace-modal').style.display='none'" style="width: 100%; background-color: transparent; border: 1px solid #36424e; margin-top: 15px;">Close</button>
+        </div>
+    </div>
+
+    <!-- Character Filter Modal -->
+    <div id="char-filter-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="width: 400px;">
+            <h2>👥 Character Filter</h2>
+            <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 15px;">Select the characters whose dialogue you want to isolate.</p>
+            
+            <div id="char-filter-list" class="backup-option" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px;">
+                <!-- Checkboxes injected here -->
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button id="btn-apply-char-filter" class="modal-btn" style="flex: 1; background-color: #1b8adb;">Apply Filter</button>
+                <button id="btn-clear-char-filter" class="modal-btn" style="flex: 1; background-color: #ef4444;">Clear Filter</button>
+            </div>
+            <button id="btn-close-char-filter" class="modal-btn" style="background-color: #4a5568; margin-top: 10px; width: 100%;">Close</button>
+        </div>
+    </div>
+
+    <!-- Exit Character Filter Button -->
+    <div id="exit-char-filter-btn" title="Exit Character Filter">
+        ❌ Exit Character Filter
     </div>
 
     <input type="file" id="file-import" style="display: none;" accept=".txt,.html,.pdf,.fountain,.fdx">

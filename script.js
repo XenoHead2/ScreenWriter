@@ -62,7 +62,7 @@ function getCurrentParagraph() {
 
 function getLineType(p) {
     if (!p) return 'action';
-    const types = ['scene-heading', 'action', 'character', 'parenthetical', 'dialogue', 'transition', 'shot', 'dual', 'page-break'];
+    const types = ['scene-heading', 'action', 'character', 'parenthetical', 'dialogue', 'transition', 'shot', 'dual', 'page-break', 'text', 'note'];
     for (let type of types) {
         if (p.classList.contains(type)) return type;
     }
@@ -112,13 +112,6 @@ function getHotkeyString(e) {
 editor.addEventListener('keydown', (e) => {
     const p = getCurrentParagraph();
     if (!p) return;
-
-    // Handle F11 for Focus Mode
-    if (e.key === 'F11') {
-        e.preventDefault();
-        toggleFocusMode();
-        return;
-    }
 
     const currentType = getLineType(p);
     const textContent = p.textContent.trim();
@@ -215,6 +208,12 @@ let appSettings = {
     sharedFolderLink: 'https://drive.google.com/',
     isRevisionMode: false,
     isFocusMode: false,
+    showPageNumbers: false,
+    showMenuBar: true,
+    showFormatBtns: true,
+    showWordCount: true,
+    filterDialogue: false,
+    filterNonDialogue: false,
     darkMode: false,
     snapshots: [],
     projectDocuments: {
@@ -338,6 +337,27 @@ function applySettingsToUI() {
     if (focusModeCheck) {
         focusModeCheck.style.visibility = appSettings.isFocusMode ? 'visible' : 'hidden';
     }
+    const pageNumbersCheck = document.getElementById('page-numbers-check');
+    if (pageNumbersCheck) {
+        pageNumbersCheck.style.visibility = appSettings.showPageNumbers ? 'visible' : 'hidden';
+    }
+    const formatBtnsCheck = document.getElementById('format-btns-check');
+    if (formatBtnsCheck) {
+        formatBtnsCheck.style.visibility = appSettings.showFormatBtns ? 'visible' : 'hidden';
+    }
+    const wordCountCheck = document.getElementById('word-count-check');
+    if (wordCountCheck) {
+        wordCountCheck.style.visibility = appSettings.showWordCount ? 'visible' : 'hidden';
+    }
+    const filterDialogueCheck = document.getElementById('filter-dialogue-check');
+    if (filterDialogueCheck) {
+        filterDialogueCheck.style.visibility = appSettings.filterDialogue ? 'visible' : 'hidden';
+    }
+    const filterNonDialogueCheck = document.getElementById('filter-non-dialogue-check');
+    if (filterNonDialogueCheck) {
+        filterNonDialogueCheck.style.visibility = appSettings.filterNonDialogue ? 'visible' : 'hidden';
+    }
+
     if (appSettings.darkMode) {
         document.body.classList.add('dark-mode');
     } else {
@@ -348,6 +368,18 @@ function applySettingsToUI() {
     } else {
         document.body.classList.remove('focus-mode');
     }
+    if (appSettings.showPageNumbers) {
+        document.body.classList.add('show-page-numbers');
+    } else {
+        document.body.classList.remove('show-page-numbers');
+    }
+
+    document.body.classList.toggle('hide-menubar', !appSettings.showMenuBar);
+    document.body.classList.toggle('hide-format-btns', !appSettings.showFormatBtns);
+    document.body.classList.toggle('hide-word-count', !appSettings.showWordCount);
+    
+    document.body.classList.toggle('filter-dialogue', appSettings.filterDialogue);
+    document.body.classList.toggle('filter-non-dialogue', appSettings.filterNonDialogue);
 }
 
 function updateProjectName(newName) {
@@ -373,8 +405,12 @@ function saveSettings() {
 
 function loadCurrentDocument() {
     editor.innerHTML = appSettings.projectDocuments[currentDocument] || '<p class="action">&#8203;</p>';
+    editor.setAttribute('data-docname', currentDocument);
     updateToolbarUI(getLineType(getCurrentParagraph()));
     updateStats();
+    if (typeof buildScenesList === 'function' && document.getElementById('sidebar-scenes-view') && document.getElementById('sidebar-scenes-view').style.display === 'flex') {
+        buildScenesList();
+    }
 }
 
 function saveCurrentDocument() {
@@ -415,10 +451,33 @@ async function handleOpenProject() {
 document.getElementById('file-menu-open').addEventListener('click', handleOpenProject);
 document.getElementById('sidebar-open-project').addEventListener('click', handleOpenProject);
 
-document.getElementById('file-menu-save').addEventListener('click', async () => {
+async function handleSave() {
+    saveCurrentDocument();
+    const projectData = JSON.stringify(appSettings.projectDocuments);
+    
+    if (window.pywebview) {
+        if (appSettings.currentProjectFile) {
+            // Already has a file, just overwrite it
+            const result = await window.pywebview.api.save_project(projectData, appSettings.currentProjectFile);
+            if (result && !result.startsWith("Error")) {
+                alert("Project saved successfully!");
+            } else if (result) {
+                alert(result);
+            }
+        } else {
+            // No file yet, trigger Save As behavior
+            handleSaveAs();
+        }
+    } else {
+        alert("Native saving requires the Python app wrapper.");
+    }
+}
+
+async function handleSaveAs() {
     saveCurrentDocument();
     const projectData = JSON.stringify(appSettings.projectDocuments);
     const projectName = appSettings.projectName || "Untitled Project";
+    
     if (window.pywebview) {
         const result = await window.pywebview.api.save_project_dialog(projectData, projectName);
         if (result && !result.startsWith("Error")) {
@@ -426,10 +485,17 @@ document.getElementById('file-menu-save').addEventListener('click', async () => 
             const filename = result.split('\\').pop().split('/').pop().replace('.ksp', '');
             updateProjectName(filename);
             addToRecent(result);
-            alert("Project saved successfully!");
-        } else if (result) { alert(result); }
-    } else { alert("Native saving requires the Python app wrapper."); }
-});
+            alert("Project saved as successfully!");
+        } else if (result) { 
+            alert(result); 
+        }
+    } else {
+        alert("Native saving requires the Python app wrapper.");
+    }
+}
+
+document.getElementById('file-menu-save').addEventListener('click', handleSave);
+document.getElementById('file-menu-save-as').addEventListener('click', handleSaveAs);
 
 document.getElementById('file-menu-rename').addEventListener('click', () => {
     const currentName = appSettings.projectName || "Untitled Project";
@@ -488,6 +554,14 @@ editor.addEventListener('input', () => {
     }
     triggerBackup();
     updateStats();
+    
+    // Debounce scenes list update in background
+    clearTimeout(window.scenesUpdateTimeout);
+    window.scenesUpdateTimeout = setTimeout(() => {
+        if (typeof buildScenesList === 'function' && document.getElementById('sidebar-scenes-view') && document.getElementById('sidebar-scenes-view').style.display === 'flex') {
+            buildScenesList();
+        }
+    }, 2000);
 });
 
 const backupModal = document.getElementById('backup-modal');
@@ -627,14 +701,35 @@ function handleExport(format) {
             text: p.textContent,
             revision: p.classList.contains('revision')
         }));
+        
+        // Extract Title Page lines if content exists
+        let titleLines = [];
+        const titleHtml = appSettings.projectDocuments['Title Page'];
+        if (titleHtml) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = titleHtml;
+            titleLines = Array.from(tempDiv.querySelectorAll('p')).map(p => ({
+                type: getLineType(p),
+                text: p.textContent,
+                revision: p.classList.contains('revision')
+            }));
+        }
+
         syncDot.style.backgroundColor = '#f59e0b';
         syncText.textContent = `Generating ${format.toUpperCase()}...`;
         const projectName = appSettings.projectName || "Untitled Project";
         
+        // Pass export options including the title page to the Python backend
+        const exportConfig = {
+            titleLines: titleLines,
+            showPageNumbers: appSettings.showPageNumbers,
+            startPageNumber: 2
+        };
+        
         let apiCall;
-        if (format === 'pdf') apiCall = window.pywebview.api.export_pdf(lines, projectName);
-        else if (format === 'fdx') apiCall = window.pywebview.api.export_fdx(lines, projectName);
-        else if (format === 'fountain') apiCall = window.pywebview.api.export_writersduet(lines, projectName);
+        if (format === 'pdf') apiCall = window.pywebview.api.export_pdf(lines, projectName, exportConfig);
+        else if (format === 'fdx') apiCall = window.pywebview.api.export_fdx(lines, projectName, exportConfig);
+        else if (format === 'fountain') apiCall = window.pywebview.api.export_writersduet(lines, projectName, exportConfig);
 
         apiCall.then(response => {
             if (response.includes('Error') || response.includes('Missing')) {
@@ -659,6 +754,18 @@ document.getElementById('file-menu-print').addEventListener('click', () => {
     window.print();
 });
 document.addEventListener('keydown', (e) => {
+    if (e.key === 'F11') {
+        e.preventDefault();
+        toggleFocusMode();
+    }
+    if (e.key === 'Escape' && appSettings.isFocusMode) {
+        e.preventDefault();
+        toggleFocusMode();
+    }
+    if (e.ctrlKey && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        openFindReplace();
+    }
     if (e.ctrlKey && e.key.toLowerCase() === 'p') {
         e.preventDefault();
         window.print();
@@ -669,7 +776,11 @@ document.addEventListener('keydown', (e) => {
     }
     if (e.ctrlKey && e.key.toLowerCase() === 's') {
         e.preventDefault();
-        e.shiftKey ? document.getElementById('file-menu-backups').click() : document.getElementById('file-menu-save').click();
+        e.shiftKey ? backupModal.style.display = 'flex' : handleSave();
+    }
+    if (e.ctrlKey && e.key.toLowerCase() === 'm') {
+        e.preventDefault();
+        toggleMenuBar();
     }
 });
 
@@ -694,6 +805,7 @@ async function handleImport() {
 
         if (ext === 'pdf') {
             const pdf = await pdfjsLib.getDocument(byteArray).promise;
+            let titlePageText = "";
             let fullText = "";
             for (let i = 1; i <= pdf.numPages; i++) {
                 const page = await pdf.getPage(i);
@@ -716,12 +828,26 @@ async function handleImport() {
                     pageText += item.str;
                     lastY = item.transform[5];
                 }
-                fullText += pageText + "\n\n";
+                if (i === 1 && pdf.numPages > 1) {
+                    titlePageText = pageText;
+                } else {
+                    fullText += pageText + (i < pdf.numPages ? "\n\n===\n\n" : "");
+                }
             }
-            processImportedText(fullText);
+            if (titlePageText) {
+                appSettings.projectDocuments['Title Page'] = processImportedText(titlePageText, true);
+                appSettings.projectDocuments['Default Document'] = processImportedText(fullText, true);
+                currentDocument = 'Default Document';
+                saveSettings();
+                rebuildDocumentSidebar();
+                loadCurrentDocument();
+            } else {
+                processImportedText(fullText);
+            }
         } else {
             const text = new TextDecoder().decode(byteArray);
-            ext === 'html' ? (editor.innerHTML = text, triggerBackup()) : processImportedText(text);
+            const sanitizedText = text.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
+            ext === 'html' ? (editor.innerHTML = sanitizedText, triggerBackup()) : processImportedText(sanitizedText);
         }
     } else {
         document.getElementById('file-import').click();
@@ -733,9 +859,13 @@ document.getElementById('file-menu-import').addEventListener('click', handleImpo
 // Configure PDF.js worker for background parsing
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-function processImportedText(content) {
+function processImportedText(content, returnHtmlOnly = false) {
+    // Normalize smart quotes (slanted apostrophes/quotes) to standard straight quotes
+    content = content.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
+
     const lines = content.split(/\r?\n/);
-    editor.innerHTML = '';
+    const targetElement = returnHtmlOnly ? document.createElement('div') : editor;
+    if (!returnHtmlOnly) targetElement.innerHTML = '';
     
     let previousType = '';
     let previousSpaces = 0;
@@ -750,6 +880,12 @@ function processImportedText(content) {
             blankLineBefore = true;
             continue;
         }
+        
+        // Skip literal 'SCENE x' lines entirely on import
+        if (/^SCENE\b/i.test(trimmed)) {
+            continue;
+        }
+
         let type = 'action';
         let isAllCaps = (trimmed === trimmed.toUpperCase() && /[A-Z]/.test(trimmed));
         const leadingSpaces = rawLine.length - rawLine.trimStart().length;
@@ -757,8 +893,6 @@ function processImportedText(content) {
         // Fountain-style Heuristic Ruleset
         if (trimmed.startsWith('===')) {
             type = 'page-break';
-        } else if (/^SCENE\b/i.test(trimmed)) {
-            type = 'shot';
         } else if (/^(INT\.|EXT\.|INT\/EXT\.|I\/E\.|INT |EXT )/i.test(trimmed)) {
             type = 'scene-heading';
         } else if (isAllCaps && (trimmed.endsWith(' TO:') || trimmed === 'FADE IN:' || trimmed === 'FADE OUT.')) {
@@ -778,30 +912,32 @@ function processImportedText(content) {
             }
         }
 
-        if (type === 'scene-heading' && editor.childNodes.length > 0) {
-            const lastNode = editor.lastChild;
-            if (lastNode && lastNode.textContent.replace(/\u200B/g, '').trim() !== '') {
-                const spacer = document.createElement('p');
-                spacer.className = 'action';
-                spacer.innerHTML = '&#8203;';
-                editor.appendChild(spacer);
+        if (!blankLineBefore && type === previousType && (type === 'action' || type === 'dialogue')) {
+            const lastNode = targetElement.lastChild;
+            if (lastNode && lastNode.className === type) {
+                lastNode.textContent += ' ' + trimmed;
+                continue;
             }
         }
 
         const p = document.createElement('p');
         p.className = type;              p.textContent = trimmed;
-        editor.appendChild(p);
+        targetElement.appendChild(p);
 
         previousType = type;
         previousSpaces = leadingSpaces;
         blankLineBefore = false;
     }
 
-    if (editor.innerHTML === '') {
+    if (targetElement.innerHTML === '') {
         const p = document.createElement('p');
         p.className = 'action';
         p.innerHTML = '&#8203;';
-        editor.appendChild(p);
+        targetElement.appendChild(p);
+    }
+
+    if (returnHtmlOnly) {
+        return targetElement.innerHTML;
     }
 
     triggerBackup();
@@ -819,6 +955,7 @@ document.getElementById('file-import').addEventListener('change', async (e) => {
         reader.onload = async function() {
             const typedarray = new Uint8Array(this.result);
             const pdf = await pdfjsLib.getDocument(typedarray).promise;
+            let titlePageText = "";
             let fullText = "";
             for (let i = 1; i <= pdf.numPages; i++) {
                 const page = await pdf.getPage(i);
@@ -831,32 +968,46 @@ document.getElementById('file-import').addEventListener('change', async (e) => {
                 for (let item of content.items) {
                     if (lastY !== -1) {
                         const yDiff = Math.abs(lastY - item.transform[5]);
-                        if (yDiff > 16) {
+                        if (yDiff > 16) { // Detect standard double-space breaks
                             pageText += '\n\n';
                         } else if (yDiff > 4) {
                             pageText += '\n';
                         }
                     }
                     if (lastY === -1 || Math.abs(lastY - item.transform[5]) > 4) {
-                        const spaces = Math.max(0, Math.floor(item.transform[4] / 6)); // Rough font space mapping
+                        const spaces = Math.max(0, Math.floor(item.transform[4] / 6));
                         pageText += ' '.repeat(spaces);
                     }
                     pageText += item.str;
                     lastY = item.transform[5];
                 }
-                fullText += pageText + "\n\n";
+                if (i === 1 && pdf.numPages > 1) {
+                    titlePageText = pageText;
+                } else {
+                    fullText += pageText + (i < pdf.numPages ? "\n\n===\n\n" : "");
+                }
             }
-            processImportedText(fullText);
+            if (titlePageText) {
+                appSettings.projectDocuments['Title Page'] = processImportedText(titlePageText, true);
+                appSettings.projectDocuments['Default Document'] = processImportedText(fullText, true);
+                currentDocument = 'Default Document';
+                saveSettings();
+                rebuildDocumentSidebar();
+                loadCurrentDocument();
+            } else {
+                processImportedText(fullText);
+            }
         };
         reader.readAsArrayBuffer(file);
     } else {
         const reader = new FileReader();
         reader.onload = (event) => {
+            const sanitizedText = event.target.result.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
             if (ext === 'html') {
-                editor.innerHTML = event.target.result;
+                editor.innerHTML = sanitizedText;
                 triggerBackup();
             } else {
-                processImportedText(event.target.result);
+                processImportedText(sanitizedText);
             }
         };
         reader.readAsText(file);
@@ -865,10 +1016,140 @@ document.getElementById('file-import').addEventListener('change', async (e) => {
 
 // --- Custom Context Menu Implementation ---
 const contextMenu = document.getElementById('context-menu');
+const spellContainer = document.getElementById('spell-suggestions-container');
 
-editor.addEventListener('contextmenu', (e) => {
+function getWordUnderCursor(x, y) {
+    let range;
+    if (document.caretRangeFromPoint) {
+        range = document.caretRangeFromPoint(x, y);
+    } else if (document.caretPositionFromPoint) {
+        const pos = document.caretPositionFromPoint(x, y);
+        if (pos) {
+            range = document.createRange();
+            range.setStart(pos.offsetNode, pos.offset);
+            range.collapse(true);
+        }
+    }
+    
+    if (range && range.startContainer.nodeType === Node.TEXT_NODE) {
+        const text = range.startContainer.textContent;
+        let start = range.startOffset;
+        let end = range.startOffset;
+        
+        while (start > 0 && /[\w']/.test(text[start - 1])) start--;
+        while (end < text.length && /[\w']/.test(text[end])) end++;
+        
+        if (start < end) {
+            const word = text.slice(start, end);
+            return { word, node: range.startContainer, start, end };
+        }
+    }
+    return null;
+}
+
+editor.addEventListener('contextmenu', async (e) => {
     e.preventDefault(); // Suppress the default browser right-click menu
     
+    let wordObj = null;
+    const sel = window.getSelection();
+    let insideSelection = false;
+    
+    if (!sel.isCollapsed && sel.rangeCount > 0) {
+        const range = sel.getRangeAt(0);
+        const rects = range.getClientRects();
+        for (let r of rects) {
+            if (e.clientX >= r.left && e.clientX <= r.right &&
+                e.clientY >= r.top && e.clientY <= r.bottom) {
+                insideSelection = true;
+                break;
+            }
+        }
+    }
+    
+    if (!insideSelection) {
+        wordObj = getWordUnderCursor(e.clientX, e.clientY);
+    }
+
+    if (spellContainer) {
+        spellContainer.style.display = 'none';
+        spellContainer.innerHTML = '';
+        
+        if (wordObj && window.pywebview) {
+            const result = await window.pywebview.api.get_spell_suggestions(wordObj.word);
+            spellContainer.style.display = 'block';
+            
+            if (result && result.error) {
+                const item = document.createElement('div');
+                item.className = 'context-menu-item';
+                item.style.color = '#f59e0b';
+                item.textContent = result.error;
+                spellContainer.appendChild(item);
+            } else if (result && result.misspelled) {
+                if (result.suggestions && result.suggestions.length > 0) {
+                    result.suggestions.forEach(sugg => {
+                        const item = document.createElement('div');
+                        item.className = 'context-menu-item';
+                        item.style.fontWeight = 'bold';
+                        item.textContent = sugg;
+                        item.onmousedown = (ev) => {
+                            ev.preventDefault();
+                            const selRange = document.createRange();
+                            selRange.setStart(wordObj.node, wordObj.start);
+                            selRange.setEnd(wordObj.node, wordObj.end);
+                            const sel = window.getSelection();
+                            sel.removeAllRanges();
+                            sel.addRange(selRange);
+                            
+                            document.execCommand('insertText', false, sugg);
+                            contextMenu.style.display = 'none';
+                            triggerBackup(); updateStats();
+                        };
+                        spellContainer.appendChild(item);
+                    });
+                } else {
+                    const item = document.createElement('div');
+                    item.className = 'context-menu-item';
+                    item.style.color = 'var(--text-muted)';
+                    item.textContent = '(No spelling suggestions)';
+                    spellContainer.appendChild(item);
+                }
+            }
+            
+            // Always allow adding the hovered word to the dictionary, even if spelled correctly
+            const addDictBtn = document.createElement('div');
+            addDictBtn.className = 'context-menu-item';
+            addDictBtn.style.fontStyle = 'italic';
+            addDictBtn.textContent = `Add "${wordObj.word}" to dictionary`;
+            addDictBtn.onmousedown = async (ev) => {
+                ev.preventDefault();
+                await window.pywebview.api.add_to_dictionary(wordObj.word);
+                contextMenu.style.display = 'none';
+                
+                if (wordObj && wordObj.node) {
+                    const selRange = document.createRange();
+                    selRange.setStart(wordObj.node, wordObj.start);
+                    selRange.setEnd(wordObj.node, wordObj.end);
+                    const sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(selRange);
+                    
+                    // Wrap the word to instantly remove the browser's native red squiggly line
+                    document.execCommand('insertHTML', false, `<span spellcheck="false">${wordObj.word}</span>`);
+                    triggerBackup(); 
+                    updateStats();
+                }
+                
+                syncDot.style.backgroundColor = '#10b981';
+                syncText.textContent = `Added "${wordObj.word}" to dictionary`;
+            };
+            spellContainer.appendChild(addDictBtn);
+            
+            const divider = document.createElement('div');
+            divider.className = 'dropdown-divider';
+            spellContainer.appendChild(divider);
+        }
+    }
+
     contextMenu.style.display = 'block';
     
     // Prevent the menu from clipping off the edges of the screen
@@ -880,6 +1161,39 @@ editor.addEventListener('contextmenu', (e) => {
     contextMenu.style.top = `${y}px`;
     contextMenu.style.left = `${x}px`;
 });
+
+// --- AI Auto-Fix Context Menu Logic ---
+const ctxAiFix = document.getElementById('ctx-ai-fix');
+if (ctxAiFix) {
+    ctxAiFix.addEventListener('mousedown', async (e) => {
+        e.preventDefault();
+        contextMenu.style.display = 'none';
+        
+        const sel = window.getSelection();
+        if (sel.isCollapsed || !editor.contains(sel.anchorNode)) return;
+        
+        const selectedText = sel.toString();
+        const range = sel.getRangeAt(0).cloneRange();
+        
+        syncDot.style.backgroundColor = '#f59e0b';
+        syncText.textContent = "AI fixing text...";
+        
+        const fixedText = await window.pywebview.api.auto_fix_script(selectedText);
+        
+        if (fixedText && !fixedText.startsWith("Error")) {
+            sel.removeAllRanges();
+            sel.addRange(range);
+            document.execCommand('insertText', false, fixedText);
+            triggerBackup();
+            updateStats();
+            syncText.textContent = "AI Auto-Fix applied";
+        } else {
+            alert(fixedText);
+            syncDot.style.backgroundColor = '#ef4444';
+            syncText.textContent = "Auto-Fix Failed";
+        }
+    });
+}
 
 // Hide menu on outside click
 document.addEventListener('mousedown', (e) => {
@@ -916,7 +1230,8 @@ document.addEventListener('mousedown', (e) => {
 const handlePaste = async (e) => {
     e.preventDefault();
     try {
-        const text = await navigator.clipboard.readText();
+        let text = await navigator.clipboard.readText();
+        text = text.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
         document.execCommand('insertText', false, text); // Insert as pure plain text
     } catch (err) { document.execCommand('paste'); }
     if (contextMenu) contextMenu.style.display = 'none';
@@ -966,6 +1281,363 @@ function toggleFocusMode() {
     saveSettings();
 }
 document.getElementById('view-toggle-focus').addEventListener('click', toggleFocusMode);
+const exitFocusBtn = document.getElementById('exit-focus-mode-btn');
+if (exitFocusBtn) {
+    exitFocusBtn.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (appSettings.isFocusMode) toggleFocusMode();
+    });
+}
+
+function togglePageNumbers() {
+    appSettings.showPageNumbers = !appSettings.showPageNumbers;
+    applySettingsToUI();
+    saveSettings();
+}
+const pageNumbersBtn = document.getElementById('view-toggle-page-numbers');
+if (pageNumbersBtn) {
+    pageNumbersBtn.addEventListener('click', togglePageNumbers);
+}
+
+function toggleMenuBar() {
+    appSettings.showMenuBar = !appSettings.showMenuBar;
+    applySettingsToUI();
+    saveSettings();
+}
+
+function toggleFormatBtns() {
+    appSettings.showFormatBtns = !appSettings.showFormatBtns;
+    applySettingsToUI();
+    saveSettings();
+}
+const formatBtnsBtn = document.getElementById('view-toggle-format-btns');
+if (formatBtnsBtn) {
+    formatBtnsBtn.addEventListener('click', toggleFormatBtns);
+}
+
+function toggleWordCount() {
+    appSettings.showWordCount = !appSettings.showWordCount;
+    applySettingsToUI();
+    saveSettings();
+}
+const wordCountBtn = document.getElementById('view-toggle-word-count');
+if (wordCountBtn) {
+    wordCountBtn.addEventListener('click', toggleWordCount);
+}
+
+function toggleDialogueFilter() {
+    appSettings.filterDialogue = !appSettings.filterDialogue;
+    if (appSettings.filterDialogue) appSettings.filterNonDialogue = false; // Mutually exclusive
+    applySettingsToUI();
+    saveSettings();
+}
+const filterDialogueBtn = document.getElementById('tools-filter-dialogue');
+if (filterDialogueBtn) {
+    filterDialogueBtn.addEventListener('click', toggleDialogueFilter);
+}
+
+function toggleNonDialogueFilter() {
+    appSettings.filterNonDialogue = !appSettings.filterNonDialogue;
+    if (appSettings.filterNonDialogue) appSettings.filterDialogue = false; // Mutually exclusive
+    applySettingsToUI();
+    saveSettings();
+}
+const filterNonDialogueBtn = document.getElementById('tools-filter-non-dialogue');
+if (filterNonDialogueBtn) {
+    filterNonDialogueBtn.addEventListener('click', toggleNonDialogueFilter);
+}
+
+// --- Character Filter Logic ---
+const charFilterModal = document.getElementById('char-filter-modal');
+const charFilterList = document.getElementById('char-filter-list');
+
+document.getElementById('tools-char-filter').addEventListener('click', () => {
+    const charElements = Array.from(editor.querySelectorAll('p.character'));
+    const uniqueChars = new Set();
+    
+    charElements.forEach(p => {
+        // Extract base name, ignoring things like (V.O.) or (CONT'D)
+        let name = p.textContent.replace(/\(.*?\)/g, '').trim();
+        if (name) {
+            uniqueChars.add(name);
+        }
+    });
+
+    charFilterList.innerHTML = '';
+    if (uniqueChars.size === 0) {
+        charFilterList.innerHTML = '<div style="color: var(--text-muted); font-size: 12px; text-align: center;">No characters found in document.</div>';
+    } else {
+        Array.from(uniqueChars).sort().forEach(charName => {
+            const label = document.createElement('label');
+            label.style.display = 'flex';
+            label.style.alignItems = 'center';
+            label.style.gap = '8px';
+            label.style.fontSize = '13px';
+            label.style.cursor = 'pointer';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = charName;
+            checkbox.className = 'char-filter-cb';
+            
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode(charName));
+            charFilterList.appendChild(label);
+        });
+    }
+
+    charFilterModal.style.display = 'flex';
+});
+
+document.getElementById('btn-close-char-filter').addEventListener('click', () => {
+    charFilterModal.style.display = 'none';
+});
+
+function applyCharacterFilter() {
+    const checkboxes = document.querySelectorAll('.char-filter-cb:checked');
+    const selectedChars = Array.from(checkboxes).map(cb => cb.value);
+
+    if (selectedChars.length === 0) {
+        alert("Please select at least one character.");
+        return;
+    }
+
+    let keepCurrentBlock = false;
+    const allParagraphs = editor.querySelectorAll('p');
+
+    allParagraphs.forEach(p => {
+        const type = getLineType(p);
+        
+        if (type === 'character') {
+            const baseName = p.textContent.replace(/\(.*?\)/g, '').trim();
+            keepCurrentBlock = selectedChars.includes(baseName);
+            if (keepCurrentBlock) p.classList.remove('char-filtered-hidden');
+            else p.classList.add('char-filtered-hidden');
+        } else if (type === 'parenthetical' || type === 'dialogue' || type === 'dual') {
+            if (keepCurrentBlock) p.classList.remove('char-filtered-hidden');
+            else p.classList.add('char-filtered-hidden');
+        } else {
+            keepCurrentBlock = false;
+            p.classList.add('char-filtered-hidden');
+        }
+    });
+
+    document.body.classList.add('character-filter-active');
+    charFilterModal.style.display = 'none';
+}
+
+function clearCharacterFilter() {
+    document.body.classList.remove('character-filter-active');
+    editor.querySelectorAll('.char-filtered-hidden').forEach(p => p.classList.remove('char-filtered-hidden'));
+    charFilterModal.style.display = 'none';
+}
+
+document.getElementById('btn-apply-char-filter').addEventListener('click', applyCharacterFilter);
+document.getElementById('btn-clear-char-filter').addEventListener('click', clearCharacterFilter);
+const exitCharFilterBtn = document.getElementById('exit-char-filter-btn');
+if (exitCharFilterBtn) {
+    exitCharFilterBtn.addEventListener('click', clearCharacterFilter);
+}
+
+// --- Rename Character Logic ---
+const renameCharModal = document.getElementById('rename-char-modal');
+const renameCharOldSelect = document.getElementById('rename-char-old');
+const renameCharNewInput = document.getElementById('rename-char-new');
+
+document.getElementById('tools-rename-character').addEventListener('click', () => {
+    const charElements = Array.from(editor.querySelectorAll('p.character'));
+    const uniqueChars = new Set();
+    
+    charElements.forEach(p => {
+        let name = p.textContent.replace(/\(.*?\)/g, '').trim();
+        if (name) uniqueChars.add(name);
+    });
+
+    renameCharOldSelect.innerHTML = '';
+    if (uniqueChars.size === 0) {
+        const opt = document.createElement('option');
+        opt.textContent = "No characters found";
+        opt.disabled = true;
+        renameCharOldSelect.appendChild(opt);
+    } else {
+        Array.from(uniqueChars).sort().forEach(charName => {
+            const opt = document.createElement('option');
+            opt.value = charName;
+            opt.textContent = charName;
+            renameCharOldSelect.appendChild(opt);
+        });
+    }
+    
+    renameCharNewInput.value = '';
+    renameCharModal.style.display = 'flex';
+});
+
+document.getElementById('btn-close-rename-char').addEventListener('click', () => {
+    renameCharModal.style.display = 'none';
+});
+
+document.getElementById('btn-apply-rename').addEventListener('click', () => {
+    const oldName = renameCharOldSelect.value;
+    const newName = renameCharNewInput.value.trim().toUpperCase();
+    const replaceAll = document.getElementById('rename-char-all-lines').checked;
+    
+    if (!oldName || !newName) {
+        alert("Please provide a valid new name.");
+        return;
+    }
+
+    let charCount = 0;
+    let otherCount = 0;
+    
+    // Escape regex characters (e.g., if the character's name is "DR. SMITH")
+    const escapedOldName = oldName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`\\b${escapedOldName}\\b`, 'gi');
+
+    editor.querySelectorAll('p').forEach(p => {
+        const type = getLineType(p);
+        
+        if (type === 'character') {
+            // Targets base name (prevents destroying extensions like " (V.O.)")
+            const baseName = p.textContent.replace(/\(.*?\)/g, '').trim();
+            if (baseName === oldName) {
+                p.textContent = p.textContent.replace(oldName, newName);
+                charCount++;
+            }
+        } else if (replaceAll && (type === 'action' || type === 'dialogue')) {
+            // Smart-case replacement across the document
+            if (regex.test(p.textContent)) {
+                p.textContent = p.textContent.replace(regex, (match) => {
+                    if (match === match.toUpperCase()) return newName;
+                    if (match === match.toLowerCase()) return newName.toLowerCase();
+                    return newName.charAt(0).toUpperCase() + newName.slice(1).toLowerCase();
+                });
+                otherCount++;
+            }
+        }
+    });
+    
+    if (charCount > 0 || otherCount > 0) {
+        triggerBackup();
+        updateStats();
+    }
+    
+    renameCharModal.style.display = 'none';
+    alert(`Successfully renamed ${charCount} character heading(s) and ${otherCount} line reference(s).`);
+});
+
+// --- Find & Replace Logic ---
+const findReplaceModal = document.getElementById('find-replace-modal');
+const findInput = document.getElementById('find-input');
+const replaceInput = document.getElementById('replace-input');
+const matchCaseCb = document.getElementById('find-match-case');
+
+function openFindReplace() {
+    document.querySelectorAll('.dropdown').forEach(m => m.classList.remove('open'));
+    findReplaceModal.style.display = 'flex';
+    
+    // Pre-populate 'find' field if user has text selected
+    const sel = window.getSelection();
+    if (!sel.isCollapsed && editor.contains(sel.anchorNode)) {
+        findInput.value = sel.toString();
+    }
+    findInput.focus();
+}
+document.getElementById('edit-find-replace').addEventListener('click', openFindReplace);
+
+function doFindNext(wrap = true) {
+    const text = findInput.value;
+    if (!text) return false;
+    const matchCase = matchCaseCb.checked;
+    
+    // window.find(string, caseSensitive, backwards, wrapAround, wholeWord, searchInFrames, showDialog)
+    const found = window.find(text, matchCase, false, wrap, false, false, false);
+    if (found) {
+        const sel = window.getSelection();
+        if (sel.rangeCount > 0) {
+            const node = sel.getRangeAt(0).startContainer.parentNode;
+            if (node && node.scrollIntoView) node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    } else if (wrap) {
+        alert(`No matches found for "${text}".`);
+    }
+    return found;
+}
+document.getElementById('btn-find-next').addEventListener('click', () => doFindNext(true));
+
+document.getElementById('btn-replace').addEventListener('click', () => {
+    const findText = findInput.value;
+    const replaceText = replaceInput.value;
+    if (!findText) return;
+
+    const sel = window.getSelection();
+    if (!sel.isCollapsed && editor.contains(sel.anchorNode)) {
+        const selText = sel.toString();
+        const matchCase = matchCaseCb.checked;
+        
+        // Ensure current selection matches what we're looking for before replacing
+        if ((matchCase && selText === findText) || (!matchCase && selText.toLowerCase() === findText.toLowerCase())) {
+            document.execCommand('insertText', false, replaceText);
+            triggerBackup();
+            updateStats();
+        }
+    }
+    doFindNext(true); // Automatically advance to next match
+});
+
+document.getElementById('btn-replace-all').addEventListener('click', () => {
+    const findText = findInput.value;
+    const replaceText = replaceInput.value;
+    if (!findText) return;
+
+    let count = 0;
+    
+    // Jump cursor to the start of the editor to search entire document cleanly
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    const range = document.createRange();
+    range.setStart(editor, 0);
+    range.collapse(true);
+    sel.addRange(range);
+
+    // Loop Find/Replace until no more matches
+    while (doFindNext(false)) { // wrap=false to avoid infinite loop
+        document.execCommand('insertText', false, replaceText);
+        count++;
+    }
+    
+    if (count > 0) {
+        triggerBackup();
+        updateStats();
+        alert(`Replaced ${count} occurrence(s).`);
+    } else {
+        alert(`No matches found for "${findText}".`);
+    }
+});
+
+// Make Find & Replace Modal Draggable
+const frModalContent = document.getElementById('find-replace-content');
+const frModalHeader = document.getElementById('find-replace-header');
+let isFrDragging = false;
+let frDragOffsetX = 0, frDragOffsetY = 0;
+
+if (frModalHeader && frModalContent) {
+    frModalHeader.addEventListener('mousedown', (e) => {
+        isFrDragging = true;
+        const rect = frModalContent.getBoundingClientRect();
+        frDragOffsetX = e.clientX - rect.left;
+        frDragOffsetY = e.clientY - rect.top;
+        frModalContent.style.right = 'auto';
+        frModalContent.style.bottom = 'auto';
+    });
+    document.addEventListener('mousemove', (e) => {
+        if (isFrDragging) {
+            frModalContent.style.left = (e.clientX - frDragOffsetX) + 'px';
+            frModalContent.style.top = (e.clientY - frDragOffsetY) + 'px';
+        }
+    });
+    document.addEventListener('mouseup', () => isFrDragging = false);
+}
 
 // --- Customize Menu Logic ---
 document.getElementById('menu-toggle-darkmode').addEventListener('click', () => {
@@ -973,6 +1645,199 @@ document.getElementById('menu-toggle-darkmode').addEventListener('click', () => 
     applySettingsToUI();
     saveSettings();
 });
+
+// --- Document-Wide Spell Check Logic ---
+let currentMisspellings = [];
+let currentSpellIndex = 0;
+let currentSpellRange = null;
+
+document.getElementById('tools-check-spelling').addEventListener('click', async () => {
+    if (!window.pywebview) {
+        alert("Spell check requires running through the Python app wrapper.");
+        return;
+    }
+    syncDot.style.backgroundColor = '#f59e0b';
+    syncText.textContent = "Checking document...";
+    
+    const text = editor.innerText;
+    const result = await window.pywebview.api.check_document_spelling(text);
+    
+    syncDot.style.backgroundColor = '#10b981';
+    syncText.textContent = "Check complete";
+    
+    if (result.error) { alert(result.error); return; }
+    
+    currentMisspellings = result.misspelled;
+    currentSpellIndex = 0;
+    currentSpellRange = null;
+    
+    if (currentMisspellings.length > 0) {
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        const range = document.createRange();
+        range.setStart(editor, 0); 
+        range.collapse(true);
+        sel.addRange(range);
+    }
+    
+    document.getElementById('spellcheck-modal').style.display = 'flex';
+    processNextSpelling();
+});
+
+function processNextSpelling() {
+    if (currentSpellIndex >= currentMisspellings.length) {
+        document.getElementById('spellcheck-active').style.display = 'none';
+        document.getElementById('spellcheck-complete').style.display = 'block';
+        return;
+    }
+    
+    const currentItem = currentMisspellings[currentSpellIndex];
+    
+    if (currentSpellRange) {
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        const r = currentSpellRange.cloneRange();
+        r.collapse(false);
+        sel.addRange(r);
+    }
+
+    const found = window.find(currentItem.word, false, false, false, true, false, false);
+    
+    if (found) {
+        const sel = window.getSelection();
+        if (sel.rangeCount > 0 && editor.contains(sel.anchorNode)) {
+            currentSpellRange = sel.getRangeAt(0).cloneRange();
+            
+            document.getElementById('spellcheck-active').style.display = 'block';
+            document.getElementById('spellcheck-complete').style.display = 'none';
+            
+            document.getElementById('spellcheck-word').textContent = currentItem.word;
+            
+            const suggSelect = document.getElementById('spellcheck-suggestions');
+            const customCorrection = document.getElementById('spellcheck-custom-correction');
+            suggSelect.innerHTML = '';
+            customCorrection.value = '';
+            
+            if (currentItem.suggestions.length > 0) {
+                currentItem.suggestions.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = opt.textContent = s;
+                    suggSelect.appendChild(opt);
+                });
+                suggSelect.selectedIndex = 0;
+                customCorrection.value = suggSelect.value;
+            } else {
+                const opt = document.createElement('option');
+                opt.value = ""; opt.textContent = "(No suggestions)"; opt.disabled = true;
+                suggSelect.appendChild(opt);
+            }
+            
+            const node = sel.getRangeAt(0).startContainer.parentNode;
+            if (node && node.scrollIntoView) node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+    }
+    
+    currentSpellIndex++;
+    currentSpellRange = null;
+    if (currentSpellIndex < currentMisspellings.length) {
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        const range = document.createRange();
+        range.setStart(editor, 0); 
+        range.collapse(true);
+        sel.addRange(range);
+    }
+    processNextSpelling();
+}
+
+document.getElementById('spellcheck-suggestions').addEventListener('change', (e) => {
+    document.getElementById('spellcheck-custom-correction').value = e.target.value;
+});
+
+document.getElementById('btn-spell-ignore').addEventListener('click', () => { processNextSpelling(); });
+document.getElementById('btn-spell-next').addEventListener('click', () => { 
+    currentSpellIndex++; 
+    currentSpellRange = null;
+    if (currentSpellIndex < currentMisspellings.length) {
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        const range = document.createRange();
+        range.setStart(editor, 0); 
+        range.collapse(true);
+        sel.addRange(range);
+    }
+    processNextSpelling(); 
+});
+document.getElementById('btn-spell-add').addEventListener('click', async () => { 
+    const currentWord = currentMisspellings[currentSpellIndex].word;
+    await window.pywebview.api.add_to_dictionary(currentWord); 
+    
+    if (currentSpellRange) {
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(currentSpellRange);
+        document.execCommand('insertHTML', false, `<span spellcheck="false">${currentWord}</span>`);
+        triggerBackup();
+        updateStats();
+    }
+
+    currentSpellIndex++; 
+    currentSpellRange = null;
+    if (currentSpellIndex < currentMisspellings.length) {
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        const range = document.createRange();
+        range.setStart(editor, 0); 
+        range.collapse(true);
+        sel.addRange(range);
+    }
+    processNextSpelling(); 
+});
+document.getElementById('btn-spell-change').addEventListener('click', () => {
+    const replacement = document.getElementById('spellcheck-custom-correction').value.trim();
+    if (replacement && currentSpellRange) { 
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(currentSpellRange);
+        document.execCommand('insertText', false, replacement); 
+        triggerBackup(); 
+        updateStats(); 
+        currentSpellRange = sel.getRangeAt(0).cloneRange();
+    }
+    processNextSpelling();
+});
+
+// --- Draggable Spellcheck Modal ---
+const spellModalContent = document.getElementById('spellcheck-content');
+const spellModalHeader = document.getElementById('spellcheck-header');
+
+let isSpellDragging = false;
+let spellDragOffsetX = 0;
+let spellDragOffsetY = 0;
+
+if (spellModalHeader && spellModalContent) {
+    spellModalHeader.addEventListener('mousedown', (e) => {
+        isSpellDragging = true;
+        const rect = spellModalContent.getBoundingClientRect();
+        spellDragOffsetX = e.clientX - rect.left;
+        spellDragOffsetY = e.clientY - rect.top;
+        
+        spellModalContent.style.right = 'auto';
+        spellModalContent.style.bottom = 'auto';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (isSpellDragging) {
+            spellModalContent.style.left = (e.clientX - spellDragOffsetX) + 'px';
+            spellModalContent.style.top = (e.clientY - spellDragOffsetY) + 'px';
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        isSpellDragging = false;
+    });
+}
 
 // --- Mini Toolbar Logic ---
 function updateMiniToolbarState() {
@@ -1110,5 +1975,154 @@ window.restoreSnapshot = (id) => {
         currentDocument = Object.keys(appSettings.projectDocuments)[0] || 'Default Document';
         rebuildDocumentSidebar(); loadCurrentDocument(); saveSettings();
         snapshotsModal.style.display = 'none';
+    }
+};
+
+// --- Sidebar Navigation & Scenes List Logic ---
+const navProjectBtn = document.getElementById('nav-project-btn');
+const navScenesBtn = document.getElementById('nav-scenes-btn');
+const sidebarProjectView = document.getElementById('sidebar-project-view');
+const sidebarScenesView = document.getElementById('sidebar-scenes-view');
+
+if (navProjectBtn && navScenesBtn) {
+    navProjectBtn.addEventListener('click', () => {
+        navProjectBtn.classList.add('active');
+        navScenesBtn.classList.remove('active');
+        sidebarProjectView.style.display = 'flex';
+        sidebarScenesView.style.display = 'none';
+    });
+
+    navScenesBtn.addEventListener('click', () => {
+        navScenesBtn.classList.add('active');
+        navProjectBtn.classList.remove('active');
+        sidebarProjectView.style.display = 'none';
+        sidebarScenesView.style.display = 'flex';
+        buildScenesList();
+    });
+}
+
+window.buildScenesList = function() {
+    const scenesList = document.getElementById('scenes-list');
+    if (!scenesList) return;
+    
+    const scrollPos = scenesList.scrollTop;
+    scenesList.innerHTML = '';
+    
+    const scenes = editor.querySelectorAll('p.scene-heading');
+    if (scenes.length === 0) {
+        scenesList.innerHTML = '<div style="padding: 15px; color: var(--text-muted); font-size: 11px; text-align: center;">No scenes found in the current document.</div>';
+        return;
+    }
+    
+    scenes.forEach((scene, index) => {
+        if (!scene.id) scene.id = 'scene-' + index + '-' + Date.now();
+        
+        const div = document.createElement('div');
+        div.className = 'sidebar-item';
+        div.style.fontSize = '11px';
+        div.style.padding = '8px 15px';
+        div.style.whiteSpace = 'nowrap';
+        div.style.overflow = 'hidden';
+        div.style.textOverflow = 'ellipsis';
+        div.style.display = 'block'; 
+        div.innerHTML = `<span style="font-size: 12px; margin-right: 8px;">🎬</span> ${scene.textContent || 'Untitled Scene'}`;
+        
+        div.addEventListener('click', () => {
+            // 1. Scroll the script down to the specific element
+            scene.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // 2. Temporarily highlight the line in blue so the user can easily spot it
+            const originalBg = scene.style.backgroundColor;
+            const originalTrans = scene.style.transition;
+            scene.style.transition = 'none';
+            scene.style.backgroundColor = '#3b82f644';
+            setTimeout(() => {
+                scene.style.transition = 'background-color 1s ease';
+                scene.style.backgroundColor = originalBg;
+                setTimeout(() => scene.style.transition = originalTrans, 1000);
+            }, 500);
+            
+            // 3. Move the typing cursor caret explicitly to the start of the scene
+            const sel = window.getSelection();
+            const range = document.createRange();
+            range.setStart(scene, 0);
+            range.collapse(true);
+            sel.removeAllRanges();
+            sel.addRange(range);
+            editor.focus();
+        });
+        
+        scenesList.appendChild(div);
+    });
+    
+    // Maintain exact scroll position so the list doesn't jump while the user is typing
+    scenesList.scrollTop = scrollPos;
+};
+
+// --- AI Script Analysis Logic ---
+const aiReportSidebar = document.getElementById('ai-report-sidebar');
+const aiAnalysisContent = document.getElementById('ai-analysis-content');
+
+document.getElementById('reports-ai-analysis').addEventListener('click', async () => {
+    if (!window.pywebview) {
+        alert("AI Analysis requires running through the Python app wrapper.");
+        return;
+    }
+    syncDot.style.backgroundColor = '#f59e0b';
+    syncText.textContent = "Analyzing script with AI...";
+    
+    // Send array of paragraphs to Python
+    const paragraphs = Array.from(editor.querySelectorAll('p')).map(p => p.textContent);
+    const result = await window.pywebview.api.analyze_script(paragraphs);
+    
+    syncDot.style.backgroundColor = '#10b981';
+    syncText.textContent = "Analysis complete";
+    
+    // Format Line#X as clickable links to scroll the editor
+    const formattedResult = result.replace(/Line#(\d+)/gi, '<a href="#" onclick="scrollToLine($1); return false;" style="color: #3b82f6; text-decoration: underline;">Line#$1</a>');
+    
+    aiAnalysisContent.innerHTML = formattedResult;
+    aiReportSidebar.style.display = 'flex';
+});
+
+document.getElementById('btn-close-ai-sidebar').addEventListener('click', () => {
+    aiReportSidebar.style.display = 'none';
+});
+
+document.getElementById('btn-export-ai-report').addEventListener('click', async () => {
+    const content = aiAnalysisContent.innerText;
+    if (!content) return;
+    
+    if (window.pywebview) {
+        const projectName = appSettings.projectName || 'Untitled Project';
+        const response = await window.pywebview.api.export_ai_report(content, projectName);
+        if (!response.includes('cancelled')) alert(response);
+    } else {
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = (appSettings.projectName || 'Untitled Project') + ' - AI Report.txt';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+});
+
+window.scrollToLine = function(lineNum) {
+    const index = parseInt(lineNum, 10) - 1;
+    const paragraphs = editor.querySelectorAll('p');
+    if (index >= 0 && index < paragraphs.length) {
+        const p = paragraphs[index];
+        p.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        const originalBg = p.style.backgroundColor;
+        const originalTrans = p.style.transition;
+        p.style.transition = 'none';
+        p.style.backgroundColor = '#f59e0b55';
+        setTimeout(() => {
+            p.style.transition = 'background-color 1s ease';
+            p.style.backgroundColor = originalBg;
+            setTimeout(() => p.style.transition = originalTrans, 1000);
+        }, 500);
     }
 };
