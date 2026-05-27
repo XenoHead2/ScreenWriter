@@ -1,0 +1,46 @@
+🎬 Scene Analysis: INT. CAFETERIA - LATER
+### 1. Dialogue & Subtext
+
+Line#114: "Forty- second Infantry." contains a distracting typo (an accidental space in "Forty-second"). Beyond the typo, having Otto immediately state his exact rank and division is on-the-nose, cliché character introduction dialogue that feels forced rather than natural.
+
+Line#116: "You smell like concrete dust and guilt." is incredibly on-the-nose. Instead of Otto explicitly spelling out the theme of "guilt" and explaining "that's how you know you're fresh," let his observations be more sensory and cryptic. Let the audience infer Benjamin's guilt and newcomer status.
+
+Line#124: "Don't trust the mirrors. They send signals. She watches." is a highly generic "madman warning" trope. Make Otto's paranoia more specific, unique, or grounded in the physical reality of the room to avoid sounding like a stock sci-fi thriller character.
+
+Line#129: "He hasn't even been here 24 hours." is inorganic exposition designed strictly for the audience's benefit. Trust the audience to understand that Benjamin is new through his behavior and unfamiliarity, rather than having Carmilla state the exact timeline out loud.
+
+Line#132: "If you pray, pray hard. If you don't, now's a fine time to learn." is a melodramatic, cliché warning that lacks subtext. Let her actions or a more subtle, unsettling observation carry the sense of dread.
+
+Line#134: "Okay. This place just keeps getting better." relies on a sarcastic protagonist trope that lowers the dramatic tension. His reaction should feel more authentic to the claustrophobia and fear of the environment.
+
+Line#147: "Crazy? Dangerous? Probably. Mostly just done..." is a massive, expository character dump. Regan is explaining Jace's entire psychology, motivation, and mysterious background to a stranger immediately upon his entrance. Show Jace's anger and desperation through his behavior, actions, and brief interactions instead of having another character explain him.
+
+
+### 2. Pacing & Action
+
+Line#117: "Benjamin gives a faint, uncertain chuckle." relies on telling the reader how the character feels ("uncertain") rather than showing a physical reaction. Keep physical actions active and observable.
+
+Line#122: "He scans the walls suspiciously." uses the unfilmable adverb "suspiciously." Replace this with a concrete physical action that implies suspicion, such as darting his eyes or staring at a specific seam in the wall.
+
+Line#139: "...attitude to spare." is editorializing and novelistic. Describe Jace's physical posture, gait, or facial expression to show this attitude to the camera.
+
+Line#140: "He stares down the room like he owns it. Or wants to burn it down." is unfilmable and purely prose-style writing. Show his threat level through active physical description rather than telling us what he might "want" to do.
+
+
+### 3. Formatting & Clarity
+
+Line#99: "INT. CAFETERIA - LATER" uses the transitional "LATER" in the very first scene heading of this sequence. It is better to establish the concrete time of day (e.g., DAY or NIGHT) first, and only use LATER if it directly follows an established scene in the exact same location.
+
+Line#102: "A man in a tattered military coat..." introduces Otto as an unnamed "man" even though he speaks immediately on the next line. Introduce him by name in ALL CAPS here, along with his age (e.g., OTTO, 50s, in a tattered military coat...) to maintain standard character introduction formatting.
+
+Line#105: "===" and Line#106: "6." are page break and page number artifacts from a PDF export. These must be deleted to keep the script layout clean.
+
+Line#128: "CARMILLA (O.S.)" is labeled Off-Screen, yet the preceding line states "A voice chimes in from a few seats down." If Carmilla is sitting in the same room just a few seats away, she is in the scene (In-Vision). If she is visible to the camera, do not use the (O.S.) extension.
+
+Line#130: "CARMILLA (60s)..." introduces Carmilla's age and description *after* she has already spoken on Line#128. A character must be introduced with their name in ALL CAPS, age, and physical description the very first time they appear or speak on screen.
+
+Line#131: "CARMILLA (TO BENJAMIN) (CONT'D)" places a directional cue in the character name block. Directional cues do not belong in the character header; "(to Benjamin)" should be placed as a parenthetical on its own line directly beneath the character name, preceding the dialogue.
+
+Line#136: "===" and Line#137: "7." are page break and page number artifacts that need to be removed.
+
+Line#142: "REGAN (O.S.)" introduces a speaking character who has not been introduced in the action lines. The reader has no idea who Regan is, how old they are, or where they are located. Properly introduce Regan in an action line before giving them dialogue.

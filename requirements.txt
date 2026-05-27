@@ -9,3 +9,5 @@ uritemplate==4.2.0
 urllib3==2.7.0
 pypdf
 fpdf2
+google-genai
+pyspellchecker

@@ -190,6 +190,27 @@ editor.addEventListener('keydown', (e) => {
         }
     }
     
+    if (e.ctrlKey && e.key === ']') {
+        e.preventDefault();
+        if (currentDocument !== 'Revision Notes') {
+            p.classList.add('revision');
+            p.style.setProperty('--rev-color', appSettings.authorColor || '#ef4444');
+            p.setAttribute('data-author', appSettings.authorName || 'Writer');
+            p.setAttribute('data-rev-color', appSettings.authorColor || '#ef4444');
+            triggerBackup();
+        }
+        return;
+    }
+    if (e.ctrlKey && e.key === '[') {
+        e.preventDefault();
+        p.classList.remove('revision');
+        p.style.removeProperty('--rev-color');
+        p.removeAttribute('data-author');
+        p.removeAttribute('data-rev-color');
+        triggerBackup();
+        return;
+    }
+
     // Strikethrough binding
     if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'x') {
         e.preventDefault();
@@ -202,6 +223,9 @@ let appSettings = {
     localDir: null,
     cloudDir: null,
     autoSaveInterval: 5,
+    maxBackupLimit: 50,
+    authorName: 'Writer',
+    authorColor: '#ef4444',
     recentProjects: [],
     projectName: 'Quiet Hours 4th Draft',
     currentProjectFile: null,
@@ -218,7 +242,7 @@ let appSettings = {
     snapshots: [],
     projectDocuments: {
         'Default Document': '',
-        'Private Pad': '',
+        'Revision Notes': '',
         'Title Page': ''
     },
     hotkeys: {
@@ -258,6 +282,10 @@ window.addEventListener('pywebviewready', async () => {
     const loaded = await window.pywebview.api.load_settings();
     if (loaded && Object.keys(loaded).length > 0) {
         appSettings = { ...appSettings, ...loaded };
+        if (appSettings.projectDocuments && appSettings.projectDocuments['Private Pad'] !== undefined) {
+            appSettings.projectDocuments['Revision Notes'] = appSettings.projectDocuments['Private Pad'];
+            delete appSettings.projectDocuments['Private Pad'];
+        }
         if (!appSettings.hotkeys) appSettings.hotkeys = {
             'scene-heading': 'ctrl+1', 'action': 'ctrl+2', 'character': 'ctrl+3', 
             'parenthetical': 'ctrl+4', 'dialogue': 'ctrl+5', 'transition': 'ctrl+6', 'shot': 'ctrl+7'
@@ -272,6 +300,10 @@ window.addEventListener('DOMContentLoaded', () => {
             const cache = localStorage.getItem('kindred_script_settings');
             if (cache) {
                 appSettings = { ...appSettings, ...JSON.parse(cache) };
+                if (appSettings.projectDocuments && appSettings.projectDocuments['Private Pad'] !== undefined) {
+                    appSettings.projectDocuments['Revision Notes'] = appSettings.projectDocuments['Private Pad'];
+                    delete appSettings.projectDocuments['Private Pad'];
+                }
                 if (!appSettings.hotkeys) appSettings.hotkeys = {
                     'scene-heading': 'ctrl+1', 'action': 'ctrl+2', 'character': 'ctrl+3', 
                     'parenthetical': 'ctrl+4', 'dialogue': 'ctrl+5', 'transition': 'ctrl+6', 'shot': 'ctrl+7'
@@ -310,6 +342,10 @@ function applySettingsToUI() {
     const intervalSelect = document.getElementById('auto-save-interval');
     if (intervalSelect && appSettings.autoSaveInterval !== undefined) {
         intervalSelect.value = appSettings.autoSaveInterval;
+    }
+    const maxBackupInput = document.getElementById('max-backup-limit');
+    if (maxBackupInput && appSettings.maxBackupLimit !== undefined) {
+        maxBackupInput.value = appSettings.maxBackupLimit;
     }
     startAutoSaveInterval();
     
@@ -420,7 +456,7 @@ function saveCurrentDocument() {
 
 document.getElementById('file-menu-new').addEventListener('click', () => {
     if (confirm("Create a new project? Any unsaved changes will be lost.")) {
-        appSettings.projectDocuments = { 'Default Document': '<p class="action">&#8203;</p>', 'Private Pad': '', 'Title Page': '' };
+        appSettings.projectDocuments = { 'Default Document': '<p class="action">&#8203;</p>', 'Revision Notes': '', 'Title Page': '' };
         currentDocument = 'Default Document';
         appSettings.currentProjectFile = null;
         updateProjectName("Untitled Project");
@@ -435,6 +471,10 @@ async function handleOpenProject() {
         if (result && result.data) {
             try {
                 const parsed = JSON.parse(result.data);
+                if (parsed['Private Pad'] !== undefined) {
+                    parsed['Revision Notes'] = parsed['Private Pad'];
+                    delete parsed['Private Pad'];
+                }
                 appSettings.projectDocuments = parsed;
                 currentDocument = Object.keys(parsed)[0] || 'Default Document';
                 appSettings.currentProjectFile = result.filepath;
@@ -519,14 +559,30 @@ function triggerBackup() {
     backupTimeout = setTimeout(async () => {
         saveCurrentDocument(); // Update Memory & settings.json
         
+        const updateTime = () => {
+            const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            appSettings.lastBackupTime = now;
+            const ts = document.getElementById('last-backup-timestamp');
+            if (ts) ts.textContent = `Last backup: ${now}`;
+            saveSettings();
+        };
+
         if (window.pywebview) {
-            window.pywebview.api.save_backup(editor.innerHTML, appSettings.cloudDir, appSettings.localDir, appSettings.projectName).then(response => {
+            window.pywebview.api.save_backup(
+                editor.innerHTML, 
+                appSettings.cloudDir, 
+                appSettings.localDir, 
+                appSettings.projectName,
+                appSettings.maxBackupLimit || 50
+            ).then(response => {
                 syncDot.style.backgroundColor = '#10b981';
                 syncText.textContent = response;
+                updateTime();
             });
         } else {
             syncDot.style.backgroundColor = '#10b981';
             syncText.textContent = 'Saved to Settings (Browser Mode)';
+            updateTime();
         }
     }, 1200);
 }
@@ -546,10 +602,13 @@ function updateStats() {
 }
 
 editor.addEventListener('input', () => {
-    if (appSettings.isRevisionMode) {
+    if (appSettings.isRevisionMode && currentDocument !== 'Revision Notes') {
         const p = getCurrentParagraph();
-        if (p && !p.classList.contains('revision') && !p.classList.contains('page-break')) {
+        if (p && !p.classList.contains('page-break')) {
             p.classList.add('revision');
+            p.style.setProperty('--rev-color', appSettings.authorColor || '#ef4444');
+            p.setAttribute('data-author', appSettings.authorName || 'Writer');
+            p.setAttribute('data-rev-color', appSettings.authorColor || '#ef4444');
         }
     }
     triggerBackup();
@@ -581,6 +640,11 @@ document.getElementById('auto-save-interval').addEventListener('change', (e) => 
     appSettings.autoSaveInterval = parseInt(e.target.value, 10);
     saveSettings();
     startAutoSaveInterval();
+});
+
+document.getElementById('max-backup-limit').addEventListener('change', (e) => {
+    appSettings.maxBackupLimit = parseInt(e.target.value, 10) || 50;
+    saveSettings();
 });
 
 document.getElementById('btn-select-cloud-dir').addEventListener('click', async () => {
@@ -621,6 +685,15 @@ document.getElementById('btn-close-modal').addEventListener('click', () => {
     backupModal.style.display = 'none';
 });
 
+const btnTriggerBackupNow = document.getElementById('btn-trigger-backup-now');
+if (btnTriggerBackupNow) {
+    btnTriggerBackupNow.addEventListener('click', () => {
+        triggerBackup();
+        btnTriggerBackupNow.textContent = 'Triggered!';
+        setTimeout(() => btnTriggerBackupNow.textContent = 'Backup Now', 2000);
+    });
+}
+
 // Hotkeys Modal Logic
 const hotkeysModal = document.getElementById('hotkeys-modal');
 
@@ -653,6 +726,28 @@ document.querySelectorAll('.hotkey-input').forEach(input => {
         const keyStr = getHotkeyString(e);
         if (keyStr !== 'ctrl' && keyStr !== 'alt' && keyStr !== 'shift') input.value = keyStr;
     });
+});
+
+// Author Profile Modal Logic
+const authorProfileModal = document.getElementById('author-profile-modal');
+const authorNameInput = document.getElementById('author-name-input');
+const authorColorInput = document.getElementById('author-color-input');
+
+document.getElementById('menu-author-profile').addEventListener('click', () => {
+    authorNameInput.value = appSettings.authorName || 'Writer';
+    authorColorInput.value = appSettings.authorColor || '#ef4444';
+    authorProfileModal.style.display = 'flex';
+});
+
+document.getElementById('btn-close-author').addEventListener('click', () => {
+    authorProfileModal.style.display = 'none';
+});
+
+document.getElementById('btn-save-author').addEventListener('click', () => {
+    appSettings.authorName = authorNameInput.value.trim() || 'Writer';
+    appSettings.authorColor = authorColorInput.value || '#ef4444';
+    saveSettings();
+    authorProfileModal.style.display = 'none';
 });
 
 const docList = document.getElementById('project-documents-list');
@@ -695,11 +790,17 @@ docList.addEventListener('click', (e) => {
 
 // Universal Export Integration
 function handleExport(format) {
+    if (currentDocument === 'Revision Notes') {
+        alert("Cannot export Revision Notes directly. Please switch to a script document before exporting.");
+        return;
+    }
+
     if (window.pywebview) {
         const lines = Array.from(editor.querySelectorAll('p')).map(p => ({
             type: getLineType(p),
             text: p.textContent,
-            revision: p.classList.contains('revision')
+            revision: p.classList.contains('revision'),
+            revColor: p.getAttribute('data-rev-color') || '#ef4444'
         }));
         
         // Extract Title Page lines if content exists
@@ -711,7 +812,8 @@ function handleExport(format) {
             titleLines = Array.from(tempDiv.querySelectorAll('p')).map(p => ({
                 type: getLineType(p),
                 text: p.textContent,
-                revision: p.classList.contains('revision')
+                revision: p.classList.contains('revision'),
+                revColor: p.getAttribute('data-rev-color') || '#ef4444'
             }));
         }
 
@@ -1070,6 +1172,21 @@ editor.addEventListener('contextmenu', async (e) => {
         wordObj = getWordUnderCursor(e.clientX, e.clientY);
     }
 
+    let targetNode = e.target;
+    if (targetNode.nodeType === Node.TEXT_NODE) targetNode = targetNode.parentNode;
+    const revisionNode = targetNode.closest ? targetNode.closest('.revision') : null;
+    
+    const revContainer = document.getElementById('revision-menu-container');
+    if (revContainer) {
+        if (revisionNode) {
+            revContainer.style.display = 'block';
+            revContainer.targetNode = revisionNode;
+        } else {
+            revContainer.style.display = 'none';
+            revContainer.targetNode = null;
+        }
+    }
+
     if (spellContainer) {
         spellContainer.style.display = 'none';
         spellContainer.innerHTML = '';
@@ -1162,9 +1279,148 @@ editor.addEventListener('contextmenu', async (e) => {
     contextMenu.style.left = `${x}px`;
 });
 
-// --- AI Auto-Fix Context Menu Logic ---
+// --- AI Suggestion Draggable Popup Logic ---
+// 1. Create the modal dynamically
+const aiSuggModal = document.createElement('div');
+aiSuggModal.id = 'ai-suggestion-modal';
+aiSuggModal.innerHTML = `
+    <div id="ai-suggestion-header">
+        <span>💡 AI Suggestions</span>
+        <div>
+            <button id="btn-copy-ai-suggestion" title="Copy to clipboard" style="margin-right: 8px;">📋</button>
+            <button id="btn-close-ai-suggestion">&times;</button>
+        </div>
+    </div>
+    <div id="ai-suggestion-content">Loading suggestions...</div>
+`;
+document.body.appendChild(aiSuggModal);
+
+const aiSuggHeader = document.getElementById('ai-suggestion-header');
+const aiSuggContent = document.getElementById('ai-suggestion-content');
+const closeAiSuggBtn = document.getElementById('btn-close-ai-suggestion');
+const copyAiSuggBtn = document.getElementById('btn-copy-ai-suggestion');
+
+closeAiSuggBtn.addEventListener('click', () => aiSuggModal.style.display = 'none');
+
+copyAiSuggBtn.addEventListener('click', async () => {
+    try {
+        // Use innerText to grab the visible text and preserve line breaks
+        await navigator.clipboard.writeText(aiSuggContent.innerText);
+        copyAiSuggBtn.textContent = '✅';
+        setTimeout(() => copyAiSuggBtn.textContent = '📋', 2000);
+    } catch (err) {
+        console.error("Failed to copy!", err);
+    }
+});
+
+// Make the modal draggable
+let isAiSuggDragging = false;
+let aiSuggOffsetX = 0, aiSuggOffsetY = 0;
+
+aiSuggHeader.addEventListener('mousedown', (e) => {
+    isAiSuggDragging = true;
+    const rect = aiSuggModal.getBoundingClientRect();
+    aiSuggOffsetX = e.clientX - rect.left;
+    aiSuggOffsetY = e.clientY - rect.top;
+    aiSuggModal.style.transform = 'none'; // Clear center transform for absolute positioning
+});
+document.addEventListener('mousemove', (e) => {
+    if (isAiSuggDragging) {
+        aiSuggModal.style.left = (e.clientX - aiSuggOffsetX) + 'px';
+        aiSuggModal.style.top = (e.clientY - aiSuggOffsetY) + 'px';
+    }
+});
+document.addEventListener('mouseup', () => {
+    if (isAiSuggDragging) {
+        isAiSuggDragging = false;
+        // Save the coordinates so it remembers where you left it
+        if (!appSettings.aiSuggPos) appSettings.aiSuggPos = {};
+        appSettings.aiSuggPos.left = aiSuggModal.style.left;
+        appSettings.aiSuggPos.top = aiSuggModal.style.top;
+        saveSettings();
+    }
+});
+
+function openAiSuggestionModal(selectedText) {
+    aiSuggModal.style.display = 'flex';
+    if (appSettings.aiSuggPos && appSettings.aiSuggPos.left) {
+        aiSuggModal.style.transform = 'none';
+        aiSuggModal.style.left = appSettings.aiSuggPos.left;
+        aiSuggModal.style.top = appSettings.aiSuggPos.top;
+    }
+    aiSuggContent.innerHTML = "<em>Analyzing text and generating suggestions...</em>";
+    if (window.pywebview) {
+        window.pywebview.api.get_ai_suggestions(selectedText).then(suggestions => {
+            aiSuggContent.innerHTML = (suggestions && !suggestions.startsWith("Error")) ? suggestions.replace(/\n/g, '<br>') : "No suggestions available.";
+        });
+    } else { aiSuggContent.innerHTML = "<em>Python backend is required for AI features.</em>"; }
+}
+
+// 2. Inject "Suggestion" button into the main formatting toolbar
+const formatToolbar = document.querySelector('.format-toolbar');
+if (formatToolbar) {
+    const suggBtn = document.createElement('button');
+    suggBtn.className = 'tool-btn';
+    suggBtn.id = 'btn-top-ai-suggestion';
+    suggBtn.innerHTML = `<span class="tool-icon">💡</span><span class="tool-label">Suggest</span>`;
+    formatToolbar.appendChild(suggBtn);
+
+    suggBtn.addEventListener('click', async () => {
+        const sel = window.getSelection();
+        if (sel.isCollapsed || !editor.contains(sel.anchorNode)) {
+            alert("Please highlight some text in the editor to get suggestions.");
+            return;
+        }
+        
+        openAiSuggestionModal(sel.toString().trim());
+    });
+
+    // Inject "Analyze Scene" button next to it
+    const analyzeSceneBtn = document.createElement('button');
+    analyzeSceneBtn.className = 'tool-btn';
+    analyzeSceneBtn.id = 'btn-top-ai-analyze-scene';
+    analyzeSceneBtn.innerHTML = `<span class="tool-icon">🎬</span><span class="tool-label">Scene AI</span>`;
+    formatToolbar.appendChild(analyzeSceneBtn);
+
+    analyzeSceneBtn.addEventListener('click', async () => {
+        if (!window.pywebview) {
+            alert("AI Analysis requires running through the Python app wrapper.");
+            return;
+        }
+        syncDot.style.backgroundColor = '#f59e0b';
+        syncText.textContent = "Analyzing scene with AI...";
+        
+        const paragraphs = Array.from(editor.querySelectorAll('p'));
+        const currentP = getCurrentParagraph();
+        let currentIndex = currentP ? paragraphs.indexOf(currentP) : 0;
+        if (currentIndex === -1) currentIndex = 0;
+
+        let startIndex = 0;
+        for (let i = currentIndex; i >= 0; i--) {
+            if (paragraphs[i].classList.contains('scene-heading')) { startIndex = i; break; }
+        }
+        let endIndex = paragraphs.length;
+        for (let i = startIndex + 1; i < paragraphs.length; i++) {
+            if (paragraphs[i].classList.contains('scene-heading')) { endIndex = i; break; }
+        }
+
+        // We send empty strings for outside elements so absolute line numbers stay identical for the Python script!
+        const sceneParagraphs = paragraphs.map((p, index) => (index >= startIndex && index < endIndex) ? p.textContent : "");
+        const result = await window.pywebview.api.analyze_script(sceneParagraphs);
+        
+        syncDot.style.backgroundColor = '#10b981';
+        syncText.textContent = "Scene analysis complete";
+        
+        const formattedResult = result.replace(/Line#(\d+)/gi, '<a href="#" onclick="scrollToLine($1); return false;" style="color: #3b82f6; text-decoration: underline;">Line#$1</a>');
+        aiAnalysisContent.innerHTML = `<div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #36424e;"><strong>🎬 Scene Analysis</strong></div>` + formattedResult;
+        aiReportSidebar.style.display = 'flex';
+    });
+}
+
+// 3. Update the old Context Menu "Auto-Fix" to act as a Suggestion trigger instead
 const ctxAiFix = document.getElementById('ctx-ai-fix');
 if (ctxAiFix) {
+    ctxAiFix.textContent = 'Get AI Suggestion';
     ctxAiFix.addEventListener('mousedown', async (e) => {
         e.preventDefault();
         contextMenu.style.display = 'none';
@@ -1172,26 +1428,7 @@ if (ctxAiFix) {
         const sel = window.getSelection();
         if (sel.isCollapsed || !editor.contains(sel.anchorNode)) return;
         
-        const selectedText = sel.toString();
-        const range = sel.getRangeAt(0).cloneRange();
-        
-        syncDot.style.backgroundColor = '#f59e0b';
-        syncText.textContent = "AI fixing text...";
-        
-        const fixedText = await window.pywebview.api.auto_fix_script(selectedText);
-        
-        if (fixedText && !fixedText.startsWith("Error")) {
-            sel.removeAllRanges();
-            sel.addRange(range);
-            document.execCommand('insertText', false, fixedText);
-            triggerBackup();
-            updateStats();
-            syncText.textContent = "AI Auto-Fix applied";
-        } else {
-            alert(fixedText);
-            syncDot.style.backgroundColor = '#ef4444';
-            syncText.textContent = "Auto-Fix Failed";
-        }
+        openAiSuggestionModal(sel.toString());
     });
 }
 
@@ -1226,6 +1463,72 @@ document.addEventListener('mousedown', (e) => {
         });
     }
 });
+
+const ctxRevApprove = document.getElementById('ctx-rev-approve');
+if (ctxRevApprove) {
+    ctxRevApprove.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const revContainer = document.getElementById('revision-menu-container');
+        const node = revContainer.targetNode;
+        if (node) {
+            node.classList.remove('revision');
+            node.style.removeProperty('--rev-color');
+            node.removeAttribute('data-author');
+            node.removeAttribute('data-rev-color');
+            triggerBackup();
+            updateStats();
+        }
+        contextMenu.style.display = 'none';
+    });
+}
+
+const ctxRevNote = document.getElementById('ctx-rev-note');
+if (ctxRevNote) {
+    ctxRevNote.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const revContainer = document.getElementById('revision-menu-container');
+        const node = revContainer.targetNode;
+        if (node) {
+            let lineText = node.textContent.replace(/\u200B/g, '').replace(/\*/g, '').trim();
+            const originalType = getLineType(node) || 'action';
+            
+            if (['scene-heading', 'character', 'transition', 'shot'].includes(originalType)) {
+                lineText = lineText.toUpperCase();
+            }
+            
+            const author = appSettings.authorName || 'Writer';
+            const newEntry = `<p class="${originalType}">${lineText}</p><p class="note">----&gt; ${author}</p><p class="action">&#8203;</p>`;
+            
+            saveCurrentDocument(); // Flush current document state
+            
+            if (!appSettings.projectDocuments['Revision Notes']) {
+                appSettings.projectDocuments['Revision Notes'] = '<p class="action">&#8203;</p>';
+            }
+            appSettings.projectDocuments['Revision Notes'] += newEntry;
+            currentDocument = 'Revision Notes';
+            
+            rebuildDocumentSidebar();
+            loadCurrentDocument();
+            
+            // Scroll safely down to view the new note
+            setTimeout(() => {
+                editor.scrollTop = editor.scrollHeight;
+                const lastP = editor.lastElementChild;
+                if (lastP) {
+                    const range = document.createRange();
+                    const sel = window.getSelection();
+                    range.setStart(lastP, lastP.childNodes.length);
+                    range.collapse(true);
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                    lastP.focus();
+                }
+            }, 50);
+            triggerBackup();
+        }
+        contextMenu.style.display = 'none';
+    });
+}
 
 const handlePaste = async (e) => {
     e.preventDefault();
@@ -1351,18 +1654,36 @@ if (filterNonDialogueBtn) {
 // --- Character Filter Logic ---
 const charFilterModal = document.getElementById('char-filter-modal');
 const charFilterList = document.getElementById('char-filter-list');
+const charFilterSpeakingOnlyCb = document.getElementById('char-filter-speaking-only');
 
-document.getElementById('tools-char-filter').addEventListener('click', () => {
+function populateCharFilterList() {
     const charElements = Array.from(editor.querySelectorAll('p.character'));
     const uniqueChars = new Set();
+    const speakingOnly = charFilterSpeakingOnlyCb ? charFilterSpeakingOnlyCb.checked : false;
     
     charElements.forEach(p => {
         // Extract base name, ignoring things like (V.O.) or (CONT'D)
         let name = p.textContent.replace(/\(.*?\)/g, '').trim();
         if (name) {
-            uniqueChars.add(name);
+            if (speakingOnly) {
+                let next = p.nextElementSibling;
+                let hasDialogue = false;
+                while (next && (next.classList.contains('parenthetical') || next.classList.contains('dialogue'))) {
+                    if (next.classList.contains('dialogue')) {
+                        hasDialogue = true;
+                        break;
+                    }
+                    next = next.nextElementSibling;
+                }
+                if (hasDialogue) uniqueChars.add(name);
+            } else {
+                uniqueChars.add(name);
+            }
         }
     });
+
+    // Save currently selected characters to prevent reset when toggling checkbox
+    const currentlySelected = Array.from(charFilterList.querySelectorAll('.char-filter-cb:checked')).map(cb => cb.value);
 
     charFilterList.innerHTML = '';
     if (uniqueChars.size === 0) {
@@ -1380,13 +1701,23 @@ document.getElementById('tools-char-filter').addEventListener('click', () => {
             checkbox.type = 'checkbox';
             checkbox.value = charName;
             checkbox.className = 'char-filter-cb';
+            if (currentlySelected.includes(charName)) {
+                checkbox.checked = true;
+            }
             
             label.appendChild(checkbox);
             label.appendChild(document.createTextNode(charName));
             charFilterList.appendChild(label);
         });
     }
+}
 
+if (charFilterSpeakingOnlyCb) {
+    charFilterSpeakingOnlyCb.addEventListener('change', populateCharFilterList);
+}
+
+document.getElementById('tools-char-filter').addEventListener('click', () => {
+    populateCharFilterList();
     charFilterModal.style.display = 'flex';
 });
 
@@ -2001,6 +2332,53 @@ if (navProjectBtn && navScenesBtn) {
     });
 }
 
+// --- Scene List Context Menu Logic ---
+const sceneContextMenu = document.createElement('div');
+sceneContextMenu.id = 'scene-context-menu';
+sceneContextMenu.className = 'context-menu';
+sceneContextMenu.innerHTML = `<div id="ctx-ai-scene-check" class="context-menu-item">🎬 AI Check Scene</div>`;
+document.body.appendChild(sceneContextMenu);
+
+document.addEventListener('mousedown', (e) => {
+    if (!e.target.closest('#scene-context-menu')) {
+        sceneContextMenu.style.display = 'none';
+    }
+});
+
+document.getElementById('ctx-ai-scene-check').addEventListener('mousedown', async (e) => {
+    e.preventDefault();
+    sceneContextMenu.style.display = 'none';
+    const scene = sceneContextMenu.targetScene;
+    if (!scene) return;
+    
+    if (!window.pywebview) {
+        alert("AI Analysis requires running through the Python app wrapper.");
+        return;
+    }
+    
+    syncDot.style.backgroundColor = '#f59e0b';
+    syncText.textContent = "Analyzing scene with AI...";
+    
+    const paragraphs = Array.from(editor.querySelectorAll('p'));
+    const startIndex = paragraphs.indexOf(scene);
+    if (startIndex === -1) return;
+    
+    let endIndex = paragraphs.length;
+    for (let i = startIndex + 1; i < paragraphs.length; i++) {
+        if (paragraphs[i].classList.contains('scene-heading')) { endIndex = i; break; }
+    }
+
+    const sceneParagraphs = paragraphs.map((p, index) => (index >= startIndex && index < endIndex) ? p.textContent : "");
+    const result = await window.pywebview.api.analyze_script(sceneParagraphs);
+    
+    syncDot.style.backgroundColor = '#10b981';
+    syncText.textContent = "Scene analysis complete";
+    
+    const formattedResult = result.replace(/Line#(\d+)/gi, '<a href="#" onclick="scrollToLine($1); return false;" style="color: #3b82f6; text-decoration: underline;">Line#$1</a>');
+    document.getElementById('ai-analysis-content').innerHTML = `<div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #36424e;"><strong>🎬 Scene Analysis: ${scene.textContent || 'Untitled Scene'}</strong></div>` + formattedResult;
+    document.getElementById('ai-report-sidebar').style.display = 'flex';
+});
+
 window.buildScenesList = function() {
     const scenesList = document.getElementById('scenes-list');
     if (!scenesList) return;
@@ -2052,6 +2430,20 @@ window.buildScenesList = function() {
             editor.focus();
         });
         
+        div.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            sceneContextMenu.targetScene = scene;
+            sceneContextMenu.style.display = 'block';
+            
+            let x = e.clientX;
+            let y = e.clientY;
+            if (x + sceneContextMenu.offsetWidth > window.innerWidth) x = window.innerWidth - sceneContextMenu.offsetWidth;
+            if (y + sceneContextMenu.offsetHeight > window.innerHeight) y = window.innerHeight - sceneContextMenu.offsetHeight;
+            
+            sceneContextMenu.style.top = `${y}px`;
+            sceneContextMenu.style.left = `${x}px`;
+        });
+        
         scenesList.appendChild(div);
     });
     
@@ -2070,6 +2462,8 @@ document.getElementById('reports-ai-analysis').addEventListener('click', async (
     }
     syncDot.style.backgroundColor = '#f59e0b';
     syncText.textContent = "Analyzing script with AI...";
+    
+    window.currentAiReportName = appSettings.projectName || 'Untitled Project';
     
     // Send array of paragraphs to Python
     const paragraphs = Array.from(editor.querySelectorAll('p')).map(p => p.textContent);
@@ -2093,16 +2487,17 @@ document.getElementById('btn-export-ai-report').addEventListener('click', async 
     const content = aiAnalysisContent.innerText;
     if (!content) return;
     
+    const exportName = window.currentAiReportName || appSettings.projectName || 'Untitled Project';
+    
     if (window.pywebview) {
-        const projectName = appSettings.projectName || 'Untitled Project';
-        const response = await window.pywebview.api.export_ai_report(content, projectName);
+        const response = await window.pywebview.api.export_ai_report(content, exportName);
         if (!response.includes('cancelled')) alert(response);
     } else {
         const blob = new Blob([content], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = (appSettings.projectName || 'Untitled Project') + ' - AI Report.txt';
+        a.download = exportName + '_AI_Report.txt';
         a.click();
         URL.revokeObjectURL(url);
     }

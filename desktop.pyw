@@ -10,7 +10,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
 
-import editor
+import editor  # type: ignore
 
 def run_dialog_script(script):
     # Use python.exe to ensure stdout capture works, but flag it to hide the console window!
@@ -190,7 +190,24 @@ print(file)
         webbrowser.open(url)
         return True
 
-    def save_backup(self, content, cloud_path=None, local_path=None, project_name="AutoBackup"):
+    def _enforce_backup_limit(self, directory, prefix, max_backups):
+        if not directory or not os.path.exists(directory) or max_backups <= 0:
+            return
+        try:
+            files = []
+            for f in os.listdir(directory):
+                if f.startswith(prefix) and f.endswith(".html"):
+                    full_path = os.path.join(directory, f)
+                    if os.path.isfile(full_path):
+                        files.append((full_path, os.path.getmtime(full_path)))
+            files.sort(key=lambda x: x[1])
+            if len(files) > max_backups:
+                for i in range(len(files) - max_backups):
+                    os.remove(files[i][0])
+        except Exception:
+            pass
+
+    def save_backup(self, content, cloud_path=None, local_path=None, project_name="AutoBackup", max_backups=50):
         """This is called directly from JavaScript, bypassing web browser security."""
         try:
             messages = []
@@ -199,6 +216,7 @@ print(file)
             safe_name = "".join(c for c in project_name if c not in r'\/:*?"<>|')
             timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
             filename = f"{safe_name}_Backup_{timestamp}.html"
+            prefix = f"{safe_name}_Backup_"
             
             # Local Backup
             actual_local = self.backup_dir
@@ -209,6 +227,7 @@ print(file)
                 local_filepath = os.path.join(actual_local, filename)
                 with open(local_filepath, "w", encoding="utf-8") as f:
                     f.write(content)
+                self._enforce_backup_limit(actual_local, prefix, max_backups)
                 messages.append("Local")
             except Exception:
                 pass
@@ -219,6 +238,7 @@ print(file)
                     cloud_filepath = os.path.join(cloud_path, filename)
                     with open(cloud_filepath, "w", encoding="utf-8") as f:
                         f.write(content)
+                    self._enforce_backup_limit(cloud_path, prefix, max_backups)
                     messages.append("Cloud")
                 except Exception:
                     pass
@@ -259,15 +279,22 @@ print(file)
                     if not self.in_title_page and self.show_page_numbers:
                         self.set_font("Courier", size=12)
                         self.set_xy(7.0, 0.5)
-                        self.cell(w=0.5, h=0.16, txt=f"{self.current_script_page}.", align='R')
+                        self.cell(w=0.5, h=0.16, txt=f"{self.current_script_page}.", align='R')  # type: ignore
                         self.current_script_page += 1
-                        self.set_margins(left=1.5, top=1.0, right=1.0)
-                        self.set_xy(1.5, 1.0)
+                    self.set_margins(left=1.5, top=1.0, right=1.0)
+                    self.set_xy(1.5, 1.0)
 
             pdf = ScreenplayPDF(show_page_numbers=show_numbers, start_page=start_page)
             pdf.set_margins(left=1.5, top=1.0, right=1.0)
             pdf.set_auto_page_break(auto=True, margin=1.0)
             
+            def hex_to_rgb(h_color):
+                try:
+                    h_color = h_color.lstrip('#')
+                    return tuple(int(h_color[i:i+2], 16) for i in (0, 2, 4))
+                except:
+                    return (0, 0, 0)
+
             def sanitize_text(t):
                 t = t.replace('\u2018', "'").replace('\u2019', "'")
                 t = t.replace('\u201c', '"').replace('\u201d', '"')
@@ -293,7 +320,7 @@ print(file)
                         pdf.ln(0.16)
                     else:
                         pdf.set_x(1.5)
-                        pdf.multi_cell(w=5.5, h=0.16, txt=text, align='C')
+                    pdf.multi_cell(w=5.5, h=0.16, txt=text, align='C')  # type: ignore
 
             pdf.in_title_page = False
             pdf.add_page()
@@ -327,25 +354,30 @@ print(file)
 
                 current_y = pdf.get_y()
                 if line.get('revision', False):
+                    rev_color = line.get('revColor', '#ef4444')
+                    r_val, g_val, b_val = hex_to_rgb(rev_color)
+                    
                     pdf.set_font("Courier", style='B', size=12)
+                    pdf.set_text_color(r_val, g_val, b_val)
                     pdf.set_xy(7.6, current_y)
-                    pdf.cell(w=0.2, h=0.16, txt="*")
+                    pdf.cell(w=0.2, h=0.16, txt="*")  # type: ignore
                     pdf.set_y(current_y) # reset Y so the main line prints correctly
+                    pdf.set_text_color(0, 0, 0)
                     pdf.set_font("Courier", style='', size=12)
 
                 if ltype == 'scene-heading':
-                    pdf.set_x(1.5); pdf.multi_cell(w=6.0, h=0.16, txt=text.upper())
+                    pdf.set_x(1.5); pdf.multi_cell(w=6.0, h=0.16, txt=text.upper())  # type: ignore
                 elif ltype == 'character':
-                    pdf.set_x(3.5); pdf.multi_cell(w=4.0, h=0.16, txt=text.upper())
+                    pdf.set_x(3.5); pdf.multi_cell(w=4.0, h=0.16, txt=text.upper())  # type: ignore
                 elif ltype == 'parenthetical':
                     text = text.replace('(', '').replace(')', '')
-                    pdf.set_x(3.1); pdf.multi_cell(w=2.5, h=0.16, txt=f"({text})")
+                    pdf.set_x(3.1); pdf.multi_cell(w=2.5, h=0.16, txt=f"({text})")  # type: ignore
                 elif ltype == 'dialogue':
-                    pdf.set_x(2.5); pdf.multi_cell(w=3.5, h=0.16, txt=text)
+                    pdf.set_x(2.5); pdf.multi_cell(w=3.5, h=0.16, txt=text)  # type: ignore
                 elif ltype == 'transition':
-                    pdf.set_x(5.5); pdf.multi_cell(w=2.0, h=0.16, txt=text.upper())
+                    pdf.set_x(5.5); pdf.multi_cell(w=2.0, h=0.16, txt=text.upper())  # type: ignore
                 else: # Action, Shot, etc.
-                    pdf.set_x(1.5); pdf.multi_cell(w=6.0, h=0.16, txt=text)
+                    pdf.set_x(1.5); pdf.multi_cell(w=6.0, h=0.16, txt=text)  # type: ignore
                 
                 last_type = ltype
 
@@ -425,7 +457,8 @@ print(file)
 
     def get_spell_suggestions(self, word):
         try:
-            from spellchecker import SpellChecker
+            from spellchecker import SpellChecker  # type: ignore
+            from spellchecker import SpellChecker  # type: ignore
         except ImportError:
             return {"error": "Please run: pip install pyspellchecker"}
             
@@ -515,8 +548,8 @@ print(file)
     def analyze_script(self, paragraphs):
         return editor.analyze_script_context(paragraphs)
         
-    def auto_fix_script(self, selected_text):
-        return editor.auto_fix_script(selected_text)
+    def get_ai_suggestions(self, selected_text):
+        return editor.get_ai_suggestions(selected_text)
 
 if __name__ == '__main__':
     api = BackendAPI()

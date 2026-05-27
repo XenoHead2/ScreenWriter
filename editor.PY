@@ -37,8 +37,14 @@ def analyze_script_context(paragraphs):
     numbered_lines = []
     for i, text in enumerate(paragraphs):
         line_text = text.replace('\u200b', '').strip()
-        if line_text:
-            numbered_lines.append(f"Line#{i+1}: {line_text}")
+        
+        # Skip empty lines, page breaks (dashes/equals), and page numbers
+        if not line_text or line_text.strip('-=') == "":
+            continue
+        if line_text.endswith('.') and line_text[:-1].isdigit():
+            continue
+            
+        numbered_lines.append(f"Line#{i+1}: {line_text}")
     numbered_script_text = '\n'.join(numbered_lines)
 
     # Frame the deep structural editing prompt
