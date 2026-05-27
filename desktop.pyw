@@ -580,6 +580,17 @@ print(file)
     def get_ai_suggestions(self, selected_text):
         return editor.get_ai_suggestions(selected_text)
 
+    def get_initial_file(self):
+        if len(sys.argv) > 1 and sys.argv[1] != '--run-dialog':
+            filepath = sys.argv[1]
+            if os.path.exists(filepath) and filepath.lower().endswith('.ksp'):
+                try:
+                    with open(filepath, "r", encoding="utf-8") as f:
+                        return {'filepath': filepath, 'data': f.read()}
+                except Exception as e:
+                    return {'error': str(e)}
+        return None
+
 if __name__ == '__main__':
     api = BackendAPI()
     

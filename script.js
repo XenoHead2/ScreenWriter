@@ -291,6 +291,25 @@ window.addEventListener('pywebviewready', async () => {
             'parenthetical': 'ctrl+4', 'dialogue': 'ctrl+5', 'transition': 'ctrl+6', 'shot': 'ctrl+7'
         };
     }
+
+    const initialFile = await window.pywebview.api.get_initial_file();
+    if (initialFile && initialFile.data) {
+        try {
+            const parsed = JSON.parse(initialFile.data);
+            if (parsed['Private Pad'] !== undefined) {
+                parsed['Revision Notes'] = parsed['Private Pad'];
+                delete parsed['Private Pad'];
+            }
+            appSettings.projectDocuments = parsed;
+            currentDocument = Object.keys(parsed)[0] || 'Default Document';
+            appSettings.currentProjectFile = initialFile.filepath;
+            const filename = initialFile.filepath.split('\\').pop().split('/').pop().replace('.ksp', '');
+            updateProjectName(filename);
+            addToRecent(initialFile.filepath);
+            saveSettings();
+        } catch (e) { alert("Invalid project file."); }
+    } else if (initialFile && initialFile.error) { alert(initialFile.error); }
+
     initApp();
 });
 
