@@ -1073,6 +1073,41 @@ document.getElementById('btn-save-author').addEventListener('click', () => {
     authorProfileModal.style.display = 'none';
 });
 
+// --- Format Colors Modal Logic ---
+const formatColorsModal = document.getElementById('format-colors-modal');
+document.getElementById('menu-format-colors').addEventListener('click', () => {
+    const colors = appSettings.elementColors || {};
+    // Default to the appropriate black/white depending on light/dark mode if no color is set
+    const defHex = appSettings.darkMode ? '#e2e8f0' : '#111111';
+    document.querySelectorAll('.format-color-picker').forEach(picker => {
+        const el = picker.getAttribute('data-element');
+        picker.value = colors[el] || defHex;
+    });
+    formatColorsModal.style.display = 'flex';
+});
+
+document.getElementById('btn-close-colors').addEventListener('click', () => {
+    formatColorsModal.style.display = 'none';
+});
+
+document.getElementById('btn-save-colors').addEventListener('click', () => {
+    if (!appSettings.elementColors) appSettings.elementColors = {};
+    document.querySelectorAll('.format-color-picker').forEach(picker => {
+        const el = picker.getAttribute('data-element');
+        appSettings.elementColors[el] = picker.value;
+    });
+    saveSettings();
+    applySettingsToUI();
+    formatColorsModal.style.display = 'none';
+});
+
+document.getElementById('btn-reset-colors').addEventListener('click', () => {
+    appSettings.elementColors = {};
+    saveSettings();
+    applySettingsToUI();
+    formatColorsModal.style.display = 'none';
+});
+
 const docList = document.getElementById('project-documents-list');
 
 function rebuildDocumentSidebar() {
