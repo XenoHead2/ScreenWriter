@@ -1,8 +1,9 @@
-<!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>KindredScript - Pro Screenplay Editor</title>
+    <title>ReelScript - Pro Screenplay Editor</title>
+    <link rel="icon" href="movie-icon.png" type="image/png">
     <link rel="stylesheet" href="styles.css">
     <style>
         /* Automatically adds standard screenplay vertical spacing above Scene Headings in the visual editor */
@@ -15,27 +16,30 @@
 <body>
 
     <div class="top-menubar">
-        <div style="font-weight: bold; color: white; margin-right: 20px;">🎬 KindredScript</div>
+        <div style="font-weight: bold; color: white; margin-right: 20px; display: flex; align-items: center; gap: 8px;">
+            <img src="movie-icon.png" alt="ReelScript Logo" style="height: 18px; width: 18px; object-fit: contain; border-radius: 4px;">
+            ReelScript 1.0
+        </div>
         <div class="menu-item dropdown" id="file-menu">File
             <div class="dropdown-content">
                 <div class="dropdown-item" id="file-menu-new"><span>New Project</span></div>
-                <div class="dropdown-item" id="file-menu-open"><span>Open Project</span><span class="hotkey-text">Ctrl-O</span></div>
+                <div class="dropdown-item" id="file-menu-open"><span>Open Project</span><span class="hotkey-text" data-hotkey-display="open-project">Ctrl-O</span></div>
                 <div class="dropdown-item"><span>Open Recent &gt;</span></div>
                 <div class="dropdown-divider"></div>
-                <div class="dropdown-item" id="file-menu-save"><span>Save Project</span><span class="hotkey-text">Ctrl-S</span></div>
+                <div class="dropdown-item" id="file-menu-save"><span>Save Project</span><span class="hotkey-text" data-hotkey-display="save-project">Ctrl-S</span></div>
                 <div class="dropdown-item" id="file-menu-save-as"><span>Save Project As...</span></div>
-                <div class="dropdown-item" id="file-menu-backups"><span>Manage Backups & Auto-Save</span><span class="hotkey-text">Ctrl-Shift-S</span></div>
+                <div class="dropdown-item" id="file-menu-backups"><span>Manage Backups & Auto-Save</span><span class="hotkey-text" data-hotkey-display="manage-backups">Ctrl-Shift-S</span></div>
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-item" id="file-menu-rename"><span>Rename Project...</span></div>
                 <div class="dropdown-item" id="file-menu-duplicate"><span>Duplicate Project...</span></div>
                 <div class="dropdown-item"><span>Remove Project...</span></div>
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-item" id="file-menu-import"><span>Import...</span></div>
-                <div class="dropdown-item" id="file-menu-export-pdf"><span>Quick Export (PDF)</span></div>
+                <div class="dropdown-item" id="file-menu-export-pdf"><span>Export PDF</span></div>
                 <div class="dropdown-item" id="file-menu-export-fdx"><span>Export Final Draft (.fdx)</span></div>
                 <div class="dropdown-item" id="file-menu-export-wd"><span>Export WriterDuet (.fountain)</span></div>
                 <div class="dropdown-item"><span>Preview</span></div>
-                <div class="dropdown-item" id="file-menu-print"><span>Print</span><span class="hotkey-text">Ctrl-P</span></div>
+                <div class="dropdown-item" id="file-menu-print"><span>Print</span><span class="hotkey-text" data-hotkey-display="print">Ctrl-P</span></div>
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-item"><span>Close Tab</span></div>
                 <div class="dropdown-item"><span>Close All Tabs Except Current</span></div>
@@ -43,34 +47,38 @@
         </div>
         <div class="menu-item dropdown" id="edit-menu">Edit
             <div class="dropdown-content">
-                <div class="dropdown-item" id="edit-undo"><span>Undo</span><span class="hotkey-text">Ctrl-Z</span></div>
-                <div class="dropdown-item" id="edit-redo"><span>Redo</span><span class="hotkey-text">Ctrl-Y</span></div>
+                <div class="dropdown-item" id="edit-undo"><span>Undo</span><span class="hotkey-text" data-hotkey-display="undo">Ctrl-Z</span></div>
+                <div class="dropdown-item" id="edit-redo"><span>Redo</span><span class="hotkey-text" data-hotkey-display="redo">Ctrl-Y</span></div>
                 <div class="dropdown-divider"></div>
-                <div class="dropdown-item" id="edit-cut"><span>Cut</span><span class="hotkey-text">Ctrl-X</span></div>
-                <div class="dropdown-item" id="edit-copy"><span>Copy</span><span class="hotkey-text">Ctrl-C</span></div>
-                <div class="dropdown-item" id="edit-paste"><span>Paste</span><span class="hotkey-text">Ctrl-V</span></div>
+                <div class="dropdown-item" id="edit-cut"><span>Cut</span><span class="hotkey-text" data-hotkey-display="cut">Ctrl-X</span></div>
+                <div class="dropdown-item" id="edit-copy"><span>Copy</span><span class="hotkey-text" data-hotkey-display="copy">Ctrl-C</span></div>
+                <div class="dropdown-item" id="edit-paste"><span>Paste</span><span class="hotkey-text" data-hotkey-display="paste">Ctrl-V</span></div>
                 <div class="dropdown-divider"></div>
-                <div class="dropdown-item" id="edit-select-all"><span>Select All</span><span class="hotkey-text">Ctrl-A</span></div>
+                <div class="dropdown-item" id="edit-select-all"><span>Select All</span><span class="hotkey-text" data-hotkey-display="select-all">Ctrl-A</span></div>
                 <div class="dropdown-divider"></div>
-                <div class="dropdown-item" id="edit-find-replace"><span>Find & Replace...</span><span class="hotkey-text">Ctrl-F</span></div>
+                <div class="dropdown-item" id="edit-find-replace"><span>Find & Replace...</span><span class="hotkey-text" data-hotkey-display="find-replace">Ctrl-F</span></div>
                 <div class="dropdown-divider"></div>
-                <div class="dropdown-item" id="edit-page-break"><span>Insert Page Break</span><span class="hotkey-text">Ctrl-Enter</span></div>
+                <div class="dropdown-item" id="edit-page-break"><span>Insert Page Break</span><span class="hotkey-text" data-hotkey-display="page-break">Ctrl-Enter</span></div>
             </div>
         </div>
         <div class="menu-item">Format</div>
         <div class="menu-item dropdown" id="view-menu">View
             <div class="dropdown-content">
-                <div class="dropdown-item" id="view-toggle-focus"><span><span id="focus-mode-check" style="visibility:hidden; margin-right:6px;">✔</span>Toggle Focus Mode</span><span class="hotkey-text">F11</span></div>
+                <div class="dropdown-item" id="view-toggle-focus"><span><span id="focus-mode-check" style="visibility:hidden; margin-right:6px;">✔</span>Toggle Focus Mode</span><span class="hotkey-text" data-hotkey-display="focus-mode">F11</span></div>
                 <div class="dropdown-item" id="view-toggle-page-numbers"><span><span id="page-numbers-check" style="visibility:hidden; margin-right:6px;">✔</span>Page Numbers</span></div>
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-item"><span>Full Screen</span></div>
                 <div class="dropdown-item" id="view-toggle-format-btns"><span><span id="format-btns-check" style="visibility:visible; margin-right:6px;">✔</span>Format Buttons</span></div>
                 <div class="dropdown-item" id="view-toggle-word-count"><span><span id="word-count-check" style="visibility:visible; margin-right:6px;">✔</span>Word Count</span></div>
+                <div class="dropdown-item" id="view-toggle-color-codes"><span><span id="color-codes-check" style="visibility:hidden; margin-right:6px;">✔</span>Color Codes</span></div>
                 <div class="dropdown-item"><span>Mind Map</span></div>
             </div>
         </div>
         <div class="menu-item dropdown" id="share-menu">Share
             <div class="dropdown-content">
+                <div class="dropdown-item" id="share-load-latest"><span>Load Latest</span></div>
+                <div class="dropdown-item" id="share-save-latest"><span>Save Latest</span></div>
+                <div class="dropdown-divider"></div>
                 <div class="dropdown-item" id="share-gdrive"><span>Open Shared Google Folder</span></div>
                 <div class="dropdown-item" id="share-configure"><span>Configure Shared Link...</span></div>
             </div>
@@ -104,23 +112,22 @@
         <div class="menu-item dropdown" id="customize-menu">Customize
             <div class="dropdown-content">
                 <div class="dropdown-item" id="menu-author-profile"><span>Author Profile & Revision Color...</span></div>
+                <div class="dropdown-item" id="menu-set-api-key"><span>Set AI API Key...</span></div>
+                <div class="dropdown-item" id="menu-format-colors"><span>Format Colors...</span></div>
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-item" id="menu-edit-hotkeys"><span>Edit Hotkeys...</span></div>
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-item" id="menu-toggle-darkmode"><span><span id="dark-mode-check" style="visibility:hidden; margin-right:6px;">✔</span>Dark Mode</span></div>
             </div>
         </div>
-        <div class="menu-item">Help</div>
-        <div class="menu-item" style="font-weight: bold; border-radius: 50%; background-color: white; color: black; padding: 2px 7px; margin-left: 5px;">?</div>
         <div style="flex-grow: 1;"></div>
     </div>
 
     <div class="main-container">
         <div class="icon-nav">
-            <div class="icon-nav-item active" id="nav-project-btn"><span class="icon-nav-icon">📋</span>Project</div>
+            <div class="icon-nav-item active" id="nav-project-btn"><span class="icon-nav-icon">📋</span>Script</div>
             <div class="icon-nav-item" id="nav-scenes-btn"><span class="icon-nav-icon">🎬</span>Scenes</div>
-            <div class="icon-nav-item"><span class="icon-nav-icon">📇</span>Cards</div>
-            <div class="icon-nav-item"><span class="icon-nav-icon">💬</span>Comments</div>
+            <div class="icon-nav-item" id="nav-notes-btn"><span class="icon-nav-icon">💬</span>My Notes</div>
         </div>
         
         <div class="project-sidebar">
@@ -152,10 +159,7 @@
                     <span class="sidebar-icon">📥</span> Import
                 </div>
                 <div class="sidebar-item" id="export-pdf-sidebar-btn">
-                    <span class="sidebar-icon">📄</span> Quick Export (PDF)
-                </div>
-                <div class="sidebar-item" id="sidebar-open-project">
-                    <span class="sidebar-icon">📂</span> Open Portfolio <span style="margin-left:auto; font-size:10px; color:#5c6b7a">Ctrl+O</span>
+                <span class="sidebar-icon">📄</span> Export PDF
                 </div>
                 <div class="sidebar-item" id="btn-external-backups">
                     <span class="sidebar-icon">💽</span> Manage Backups
@@ -176,22 +180,30 @@
                     <!-- Scenes injected here -->
                 </div>
             </div>
+        
+        <div id="sidebar-notes-view" style="display: none; flex-direction: column; flex: 1; height: 100%;">
+            <div class="sidebar-header">
+                <span>💬 My Notes (Local Only)</span>
+            </div>
+            <textarea id="local-notes-area" style="flex: 1; background: transparent; border: none; color: white; padding: 15px; outline: none; resize: none; font-family: inherit; font-size: 13px;" placeholder="Type your private notes here. These stay on your computer and won't be saved into the shared project file..."></textarea>
+        </div>
         </div>
         <div class="editor-area">
             <div class="format-toolbar" id="toolbar">
-        <button class="tool-btn" data-type="scene-heading" onclick="setLineType('scene-heading')" title="Scene (Ctrl+1 / Alt+S)"><span class="tool-icon">🖼️</span><span class="tool-label">Scene</span></button>
-        <button class="tool-btn" data-type="action" onclick="setLineType('action')" title="Action (Ctrl+2 / Alt+A)"><span class="tool-icon">📢</span><span class="tool-label">Action</span></button>
-        <button class="tool-btn" data-type="character" onclick="setLineType('character')" title="Character (Ctrl+3 / Alt+C)"><span class="tool-icon">👤</span><span class="tool-label">Character</span></button>
-        <button class="tool-btn" data-type="parenthetical" onclick="setLineType('parenthetical')" title="Parenthetical (Ctrl+4 / Alt+P)"><span class="tool-icon">()</span><span class="tool-label">Parens</span></button>
-        <button class="tool-btn" data-type="dialogue" onclick="setLineType('dialogue')" title="Dialogue (Ctrl+5 / Alt+D)"><span class="tool-icon">💬</span><span class="tool-label">Dialogue</span></button>
-        <button class="tool-btn" data-type="transition" onclick="setLineType('transition')" title="Transition (Ctrl+6 / Alt+T)"><span class="tool-icon">⇄</span><span class="tool-label">Transition</span></button>
-        <button class="tool-btn" data-type="shot" onclick="setLineType('shot')" title="Shot (Ctrl+7 / Alt+H)"><span class="tool-icon">📹</span><span class="tool-label">Shot</span></button>
+        <button class="tool-btn" data-type="scene-heading" onclick="setLineType('scene-heading')" title="Scene (Ctrl-1)" data-hotkey-display="scene-heading"><span class="tool-icon">🖼️</span><span class="tool-label">Scene</span></button>
+        <button class="tool-btn" data-type="action" onclick="setLineType('action')" title="Action (Ctrl-2)" data-hotkey-display="action"><span class="tool-icon">📢</span><span class="tool-label">Action</span></button>
+        <button class="tool-btn" data-type="character" onclick="setLineType('character')" title="Character (Ctrl-3)" data-hotkey-display="character"><span class="tool-icon">👤</span><span class="tool-label">Character</span></button>
+        <button class="tool-btn" data-type="dialogue" onclick="setLineType('dialogue')" title="Dialogue (Ctrl-5)" data-hotkey-display="dialogue"><span class="tool-icon">💬</span><span class="tool-label">Dialogue</span></button>
+        <button class="tool-btn" data-type="parenthetical" onclick="setLineType('parenthetical')" title="Parenthetical (Ctrl-4)" data-hotkey-display="parenthetical"><span class="tool-icon">()</span><span class="tool-label">Parens</span></button>
         <button class="tool-btn" data-type="dual" onclick="setLineType('dual')" title="Dual Dialogue (Ctrl+D)"><span class="tool-icon">🗣</span><span class="tool-label">Dual</span></button>
+        <button class="tool-btn" data-type="shot" onclick="setLineType('shot')" title="Shot (Ctrl-7)" data-hotkey-display="shot"><span class="tool-icon">📹</span><span class="tool-label">Shot</span></button>
+        <button class="tool-btn" data-type="transition" onclick="setLineType('transition')" title="Transition (Ctrl-6)" data-hotkey-display="transition"><span class="tool-icon">⇄</span><span class="tool-label">Transition</span></button>
     </div>
     <div class="mini-toolbar">
-        <button class="mini-tool-btn" id="mini-bold" title="Bold (Ctrl+B)"><b>B</b></button>
-        <button class="mini-tool-btn" id="mini-italic" title="Italic (Ctrl+I)"><i>I</i></button>
-        <button class="mini-tool-btn" id="mini-underline" title="Underline (Ctrl+U)"><u>U</u></button>
+        <button class="mini-tool-btn" id="mini-bold" title="Bold (Ctrl-B)" data-hotkey-display="bold"><b>B</b></button>
+        <button class="mini-tool-btn" id="mini-italic" title="Italic (Ctrl-I)" data-hotkey-display="italic"><i>I</i></button>
+        <button class="mini-tool-btn" id="mini-underline" title="Underline (Ctrl-U)" data-hotkey-display="underline"><u>U</u></button>
+        <button class="mini-tool-btn" id="mini-case-toggle" title="Toggle Case (Ctrl-Shift-U)" data-hotkey-display="toggle-case"><b>Aa</b></button>
         <div class="mini-divider"></div>
         <button class="mini-tool-btn" id="mini-align-left" title="Align Left">
             <svg width="16" height="16" viewBox="0 0 16 16"><path fill="currentColor" d="M1 3h14v1H1zM1 6h10v1H1zM1 9h14v1H1zM1 12h10v1H1z"/></svg>
@@ -205,6 +217,7 @@
     </div>
 
     <div class="workspace">
+        <div id="page-numbers-overlay" class="page-numbers-overlay"></div>
         <div class="script-page" id="editor" contenteditable="true" spellcheck="true">
             <p class="scene-heading">INT. SAMPLE SCENE - DAY</p>
             <p class="action">The cursor blinks smoothly. The environment matches the layout rules completely.</p>
@@ -244,51 +257,78 @@
 
     <!-- Backup Configuration Modal -->
     <div id="backup-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-content">
+        <div class="modal-content" style="width: 550px;">
             <h2>💽 Manage Backups & Auto-Save</h2>
             
-            <div class="backup-option">
-                <h3>⏳ Auto-Save Interval</h3>
-                <p>Choose how often the editor automatically saves your work in the background.</p>
-                <select id="auto-save-interval" style="background: #1a232c; color: white; border: 1px solid #36424e; padding: 6px; border-radius: 4px; font-size: 12px; outline: none; width: 100%;">
-                    <option value="0">Off (Only save on typing pause)</option>
-                    <option value="1">Every 1 Minute</option>
-                    <option value="5">Every 5 Minutes</option>
-                    <option value="10">Every 10 Minutes</option>
-                    <option value="30">Every 30 Minutes</option>
-                </select>
-            </div>
-
-            <div class="backup-option">
-                <h3>🔢 Max Backup Limit</h3>
-                <p>Limit the number of backups kept in each folder. Oldest backups will be deleted when this limit is reached.</p>
-                <input type="number" id="max-backup-limit" min="1" max="1000" style="background: #1a232c; color: white; border: 1px solid #36424e; padding: 6px; border-radius: 4px; font-size: 12px; outline: none; width: 100%;">
-            </div>
-            
-            <div class="backup-option">
-                <h3><span style="font-size: 16px;">☁️</span> Cloud Backup</h3>
-                <p>Select a folder on your computer (like your <b>Google Drive</b> or <b>Dropbox</b>) to automatically save a backup of your script.</p>
-                <button id="btn-select-cloud-dir" class="modal-btn" style="background-color: #1b8adb;">Select Cloud Folder</button>
-                <span id="cloud-dir-status" class="backup-status" style="color:var(--text-muted)">Not configured</span>
+            <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                <div class="backup-option" style="flex: 1; margin-bottom: 0;">
+                    <h3>⏳ Auto-Save Interval</h3>
+                    <select id="auto-save-interval" style="background: #1a232c; color: white; border: 1px solid #36424e; padding: 6px; border-radius: 4px; font-size: 12px; outline: none; width: 100%; margin-top: 5px;">
+                        <option value="0">Off (Only save on pause)</option>
+                        <option value="1">Every 1 Minute</option>
+                        <option value="5">Every 5 Minutes</option>
+                        <option value="10">Every 10 Minutes</option>
+                        <option value="30">Every 30 Minutes</option>
+                    </select>
+                </div>
+                <div class="backup-option" style="flex: 1; margin-bottom: 0;">
+                    <h3>🔢 Max Backup Limit</h3>
+                    <input type="number" id="max-backup-limit" min="1" max="1000" style="background: #1a232c; color: white; border: 1px solid #36424e; padding: 6px; border-radius: 4px; font-size: 12px; outline: none; width: 100%; margin-top: 5px;">
+                </div>
             </div>
             
-            <div class="backup-option">
-                <h3><span style="font-size: 16px;">💽</span> Local Backup</h3>
-                <p>Select a local folder to keep an additional backup (defaults to your Documents folder).</p>
-                <button id="btn-select-local-dir" class="modal-btn" style="background-color: #1b8adb;">Select Local Folder</button>
-                <span id="local-dir-status" class="backup-status" style="color:var(--text-muted)">Not configured</span>
+            <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                <div class="backup-option" style="flex: 1; margin-bottom: 0;">
+                    <h3><span style="font-size: 16px;">☁️</span> Cloud Backup</h3>
+                    <p style="font-size: 10px; margin-bottom: 8px;">Select a Google Drive or Dropbox folder.</p>
+                    <button id="btn-select-cloud-dir" class="modal-btn" style="background-color: #1b8adb; width: 100%; margin-bottom: 5px;">Select Folder</button>
+                    <div id="cloud-dir-status" class="backup-status" style="color:var(--text-muted); margin-left: 0; word-break: break-all;">Not configured</div>
+                </div>
+                <div class="backup-option" style="flex: 1; margin-bottom: 0;">
+                    <h3><span style="font-size: 16px;">💽</span> Local Backup</h3>
+                    <p style="font-size: 10px; margin-bottom: 8px;">Select a local hard drive folder.</p>
+                    <button id="btn-select-local-dir" class="modal-btn" style="background-color: #1b8adb; width: 100%; margin-bottom: 5px;">Select Folder</button>
+                    <div id="local-dir-status" class="backup-status" style="color:var(--text-muted); margin-left: 0; word-break: break-all;">Not configured</div>
+                </div>
             </div>
 
             <div class="backup-option">
                 <h3><span style="font-size: 16px;">⚡</span> Manual Backup</h3>
-                <p>Instantly save your current work to your configured backup folders.</p>
-                <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-top: 8px;">
                     <button id="btn-trigger-backup-now" class="modal-btn" style="background-color: #f59e0b;">Backup Now</button>
                     <span id="last-backup-timestamp" style="font-size: 11px; color: var(--text-muted);"></span>
                 </div>
             </div>
 
-            <button id="btn-close-modal" class="modal-btn" style="background-color: #4a5568; margin-top: 10px; width: 100%;">Close</button>
+            <button id="btn-close-modal" class="modal-btn" style="background-color: #4a5568; margin-top: 5px; width: 100%;">Close</button>
+        </div>
+    </div>
+
+    <!-- New Project Modal -->
+    <div id="new-project-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="width: 450px;">
+            <h2>📝 Create New Project</h2>
+            <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 15px;">Set your project name and select your local save location. The cloud share folder will be created automatically.</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
+                <label style="font-size: 12px; color: var(--text-muted);">Project Name:</label>
+                <input type="text" id="new-project-name" placeholder="e.g., Untitled Project" style="background: #1a232c; border: 1px solid #36424e; color: white; padding: 8px; border-radius: 4px; outline: none;">
+                
+                <label style="font-size: 12px; color: var(--text-muted); margin-top: 5px;">Cloud Folder (Google Drive\scripts):</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="new-project-cloud-dir" readonly placeholder="Select Google Drive scripts folder..." style="flex: 1; background: #12181f; border: 1px solid #36424e; color: var(--text-muted); padding: 8px; border-radius: 4px; outline: none;">
+                    <button id="btn-browse-new-cloud" class="modal-btn" style="background-color: #1b8adb;">Browse...</button>
+                </div>
+
+                <label style="font-size: 12px; color: var(--text-muted); margin-top: 5px;">Local Save Location (Backup):</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="new-project-local-dir" readonly placeholder="Select a local folder..." style="flex: 1; background: #12181f; border: 1px solid #36424e; color: var(--text-muted); padding: 8px; border-radius: 4px; outline: none;">
+                    <button id="btn-browse-new-local" class="modal-btn" style="background-color: #1b8adb;">Browse...</button>
+                </div>
+            </div>
+
+            <button id="btn-create-new-project" class="modal-btn" style="background-color: #10b981; width: 100%; margin-bottom: 10px;">Create Project</button>
+            <button id="btn-cancel-new-project" class="modal-btn" style="background-color: #4a5568; width: 100%;">Cancel</button>
         </div>
     </div>
 
@@ -298,35 +338,40 @@
             <h2>⌨️ Edit Hotkeys</h2>
             <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 15px;">Click an input field and press your desired key combination.</p>
             
-            <div class="backup-option" style="max-height: 300px; overflow-y: auto;">
-                <div class="hotkey-row">
-                    <span>Scene Heading</span>
-                    <input type="text" class="hotkey-input" data-action="scene-heading" value="ctrl+1" readonly>
-                </div>
-                <div class="hotkey-row">
-                    <span>Action</span>
-                    <input type="text" class="hotkey-input" data-action="action" value="ctrl+2" readonly>
-                </div>
-                <div class="hotkey-row">
-                    <span>Character</span>
-                    <input type="text" class="hotkey-input" data-action="character" value="ctrl+3" readonly>
-                </div>
-                <div class="hotkey-row">
-                    <span>Parenthetical</span>
-                    <input type="text" class="hotkey-input" data-action="parenthetical" value="ctrl+4" readonly>
-                </div>
-                <div class="hotkey-row">
-                    <span>Dialogue</span>
-                    <input type="text" class="hotkey-input" data-action="dialogue" value="ctrl+5" readonly>
-                </div>
-                <div class="hotkey-row">
-                    <span>Transition</span>
-                    <input type="text" class="hotkey-input" data-action="transition" value="ctrl+6" readonly>
-                </div>
-                <div class="hotkey-row">
-                    <span>Shot</span>
-                    <input type="text" class="hotkey-input" data-action="shot" value="ctrl+7" readonly>
-                </div>
+            <div class="backup-option" style="max-height: 400px; overflow-y: auto; padding-right: 10px;">
+                <h3 style="color: #1b8adb; margin: 0 0 10px 0; font-size: 13px;">Formatting</h3>
+                <div class="hotkey-row"><span>Scene Heading</span><input type="text" class="hotkey-input" data-action="scene-heading" readonly></div>
+                <div class="hotkey-row"><span>Action</span><input type="text" class="hotkey-input" data-action="action" readonly></div>
+                <div class="hotkey-row"><span>Character</span><input type="text" class="hotkey-input" data-action="character" readonly></div>
+                <div class="hotkey-row"><span>Parenthetical</span><input type="text" class="hotkey-input" data-action="parenthetical" readonly></div>
+                <div class="hotkey-row"><span>Dialogue</span><input type="text" class="hotkey-input" data-action="dialogue" readonly></div>
+                <div class="hotkey-row"><span>Transition</span><input type="text" class="hotkey-input" data-action="transition" readonly></div>
+                <div class="hotkey-row"><span>Shot</span><input type="text" class="hotkey-input" data-action="shot" readonly></div>
+                <div class="hotkey-row"><span>Page Break</span><input type="text" class="hotkey-input" data-action="page-break" readonly></div>
+                
+                <h3 style="color: #1b8adb; margin: 15px 0 10px 0; font-size: 13px;">Styles & Editing</h3>
+                <div class="hotkey-row"><span>Bold</span><input type="text" class="hotkey-input" data-action="bold" readonly></div>
+                <div class="hotkey-row"><span>Italic</span><input type="text" class="hotkey-input" data-action="italic" readonly></div>
+                <div class="hotkey-row"><span>Underline</span><input type="text" class="hotkey-input" data-action="underline" readonly></div>
+                <div class="hotkey-row"><span>Strikethrough</span><input type="text" class="hotkey-input" data-action="strikethrough" readonly></div>
+                <div class="hotkey-row"><span>Toggle Case</span><input type="text" class="hotkey-input" data-action="toggle-case" readonly></div>
+                <div class="hotkey-row"><span>Add Revision Mark</span><input type="text" class="hotkey-input" data-action="add-revision" readonly></div>
+                <div class="hotkey-row"><span>Remove Revision Mark</span><input type="text" class="hotkey-input" data-action="remove-revision" readonly></div>
+                <div class="hotkey-row"><span>Undo</span><input type="text" class="hotkey-input" data-action="undo" readonly></div>
+                <div class="hotkey-row"><span>Redo</span><input type="text" class="hotkey-input" data-action="redo" readonly></div>
+                <div class="hotkey-row"><span>Cut</span><input type="text" class="hotkey-input" data-action="cut" readonly></div>
+                <div class="hotkey-row"><span>Copy</span><input type="text" class="hotkey-input" data-action="copy" readonly></div>
+                <div class="hotkey-row"><span>Paste</span><input type="text" class="hotkey-input" data-action="paste" readonly></div>
+                <div class="hotkey-row"><span>Select All</span><input type="text" class="hotkey-input" data-action="select-all" readonly></div>
+
+                <h3 style="color: #1b8adb; margin: 15px 0 10px 0; font-size: 13px;">Application</h3>
+                <div class="hotkey-row"><span>Find & Replace</span><input type="text" class="hotkey-input" data-action="find-replace" readonly></div>
+                <div class="hotkey-row"><span>Open Project</span><input type="text" class="hotkey-input" data-action="open-project" readonly></div>
+                <div class="hotkey-row"><span>Save Project</span><input type="text" class="hotkey-input" data-action="save-project" readonly></div>
+                <div class="hotkey-row"><span>Manage Backups</span><input type="text" class="hotkey-input" data-action="manage-backups" readonly></div>
+                <div class="hotkey-row"><span>Print</span><input type="text" class="hotkey-input" data-action="print" readonly></div>
+                <div class="hotkey-row"><span>Focus Mode</span><input type="text" class="hotkey-input" data-action="focus-mode" readonly></div>
+                <div class="hotkey-row"><span>Toggle Menu Bar</span><input type="text" class="hotkey-input" data-action="toggle-menu" readonly></div>
             </div>
 
             <button id="btn-save-hotkeys" class="modal-btn" style="background-color: #1b8adb; margin-top: 10px; width: 100%;">Save Hotkeys</button>
@@ -353,6 +398,51 @@
 
             <button id="btn-save-author" class="modal-btn" style="background-color: #1b8adb; width: 100%; margin-bottom: 10px;">Save Profile</button>
             <button id="btn-close-author" class="modal-btn" style="background-color: #4a5568; width: 100%;">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Format Colors Modal -->
+    <div id="format-colors-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="width: 400px;">
+            <h2>🎨 Format Colors</h2>
+            <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 15px;">Customize the display color of each screenplay element. These colors will only appear on your screen and will NEVER export or print.</p>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label style="font-size: 12px; color: var(--text-muted);">Scene Heading</label>
+                    <input type="color" class="format-color-picker" data-element="scene" style="background: transparent; border: none; outline: none; cursor: pointer; height: 24px; width: 30px; padding: 0;">
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label style="font-size: 12px; color: var(--text-muted);">Action</label>
+                    <input type="color" class="format-color-picker" data-element="action" style="background: transparent; border: none; outline: none; cursor: pointer; height: 24px; width: 30px; padding: 0;">
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label style="font-size: 12px; color: var(--text-muted);">Character</label>
+                    <input type="color" class="format-color-picker" data-element="character" style="background: transparent; border: none; outline: none; cursor: pointer; height: 24px; width: 30px; padding: 0;">
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label style="font-size: 12px; color: var(--text-muted);">Dialogue / Dual</label>
+                    <input type="color" class="format-color-picker" data-element="dialogue" style="background: transparent; border: none; outline: none; cursor: pointer; height: 24px; width: 30px; padding: 0;">
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label style="font-size: 12px; color: var(--text-muted);">Parenthetical</label>
+                    <input type="color" class="format-color-picker" data-element="parenthetical" style="background: transparent; border: none; outline: none; cursor: pointer; height: 24px; width: 30px; padding: 0;">
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label style="font-size: 12px; color: var(--text-muted);">Transition</label>
+                    <input type="color" class="format-color-picker" data-element="transition" style="background: transparent; border: none; outline: none; cursor: pointer; height: 24px; width: 30px; padding: 0;">
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label style="font-size: 12px; color: var(--text-muted);">Shot</label>
+                    <input type="color" class="format-color-picker" data-element="shot" style="background: transparent; border: none; outline: none; cursor: pointer; height: 24px; width: 30px; padding: 0;">
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button id="btn-save-colors" class="modal-btn" style="flex: 1; background-color: #10b981;">Save Colors</button>
+                <button id="btn-reset-colors" class="modal-btn" style="flex: 1; background-color: #f59e0b;">Reset to Defaults</button>
+            </div>
+            <button id="btn-close-colors" class="modal-btn" style="background-color: #4a5568; margin-top: 10px; width: 100%;">Cancel</button>
         </div>
     </div>
 

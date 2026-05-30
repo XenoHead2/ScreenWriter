@@ -28,6 +28,16 @@ body.dark-mode {
     --toolbar-border: #25313e;
 }
 
+body.dark-mode .script-page {
+    background-image: linear-gradient(
+        to bottom,
+        transparent,
+        transparent calc(11in - 2px),
+        #4a5568 calc(11in - 2px),
+        #4a5568 11in
+    );
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
     background-color: var(--bg-dark);
@@ -238,10 +248,12 @@ body.character-filter-active #exit-char-filter-btn {
     padding: 40px 20px;
     background-color: var(--bg-dark);
     counter-reset: page-number;
+    position: relative;
 }
 
 /* Core Screenplay Page Setup */
 .script-page {
+    position: relative;
     background-color: var(--page-bg);
     color: var(--script-text);
     font-family: "Courier Prime", "Courier New", Courier, monospace;
@@ -253,6 +265,16 @@ body.character-filter-active #exit-char-filter-btn {
     box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     outline: none;
     margin: 0 auto;
+    background-image: linear-gradient(
+        to bottom,
+        transparent,
+        transparent calc(11in - 2px),
+        var(--toolbar-border) calc(11in - 2px),
+        var(--toolbar-border) 11in
+    );
+    background-position: 0 0;
+    background-size: 100% 11in;
+    background-repeat: repeat-y;
 }
 /* Maintain selection highlight when editor loses focus during spell check */
 #editor::selection, #editor *::selection {
@@ -268,8 +290,24 @@ body.character-filter-active #exit-char-filter-btn {
     white-space: pre-wrap;
     word-break: break-word;
 }
+.script-page p.align-left { text-align: left; }
 .script-page p.align-center { text-align: center; }
 .script-page p.align-right { text-align: right; }
+
+/* Title Page Specific Formatting */
+.script-page.title-page-active p {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100% !important;
+    text-transform: none !important;
+    text-align: center; /* Default center for title page */
+}
+.script-page.title-page-active p.align-left {
+    text-align: left !important;
+}
+.script-page.title-page-active p.align-right {
+    text-align: right !important;
+}
 
 /* Margins match Industry Standards & Layout Specifications */
 .scene-heading { 
@@ -329,6 +367,16 @@ body.character-filter-active #exit-char-filter-btn {
     color: var(--text-muted);
 }
 
+/* Color Codes - Only active when View -> Color Codes is checked */
+body.color-codes-active .script-page p.scene-heading { color: var(--color-scene, inherit); }
+body.color-codes-active .script-page p.action { color: var(--color-action, inherit); }
+body.color-codes-active .script-page p.character { color: var(--color-character, inherit); }
+body.color-codes-active .script-page p.parenthetical { color: var(--color-parenthetical, inherit); }
+body.color-codes-active .script-page p.dialogue { color: var(--color-dialogue, inherit); }
+body.color-codes-active .script-page p.dual { color: var(--color-dialogue, inherit); }
+body.color-codes-active .script-page p.transition { color: var(--color-transition, inherit); }
+body.color-codes-active .script-page p.shot { color: var(--color-shot, inherit); }
+
 /* Page Break Element */
 .page-break {
     page-break-after: always;
@@ -344,7 +392,7 @@ body.character-filter-active #exit-char-filter-btn {
     counter-increment: page-number;
 }
 .page-break::after {
-    content: "PAGE BREAK";
+    content: "HARD PAGE BREAK";
     position: absolute;
     top: -6px;
     right: 0;
@@ -356,7 +404,7 @@ body.character-filter-active #exit-char-filter-btn {
     font-weight: bold;
 }
 body.show-page-numbers .page-break::after {
-    content: "PAGE " counter(page-number) " BREAK";
+    content: "HARD PAGE " counter(page-number) " BREAK";
 }
 
 /* Additional Toolbar Line Types */
@@ -590,6 +638,8 @@ body.show-page-numbers .page-break::after {
         padding: 0 !important;
         margin-right: 0 !important;
     }
+    .page-numbers-overlay { top: 0 !important; display: block !important; }
+    .editor-page-number { color: black !important; }
     @page { margin: 1.0in 1.0in 1.0in 1.5in; size: letter; }
 }
 

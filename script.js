@@ -20,9 +20,28 @@ function insertPageBreak() {
     const p = getCurrentParagraph();
     if (!p) return;
     
+    if (p.classList.contains('page-break')) {
+        return; // Prevent nesting duplicate page breaks
+    }
+    
+    const sel = window.getSelection();
+    let textAfterCursor = "";
+    
+    if (sel.rangeCount > 0) {
+        const range = sel.getRangeAt(0);
+        if (range.endOffset < p.textContent.length) {
+            const endRange = range.cloneRange();
+            endRange.selectNodeContents(p);
+            endRange.setStart(range.endContainer, range.endOffset);
+            textAfterCursor = endRange.toString();
+            endRange.deleteContents();
+        }
+    }
+    
     let pageBreakNode;
     if (p.textContent.replace(/\u200B/g, '').trim() === '') {
         setLineType('page-break', p);
+        p.innerHTML = '&#8203;';
         pageBreakNode = p;
     } else {
         pageBreakNode = document.createElement('p');
@@ -32,16 +51,20 @@ function insertPageBreak() {
     }
 
     const actionP = document.createElement('p');
-    actionP.className = 'action';
-    actionP.innerHTML = '&#8203;';
+    if (textAfterCursor.trim().length > 0) {
+        actionP.className = p.className;
+        actionP.textContent = textAfterCursor;
+    } else {
+        actionP.className = 'action';
+        actionP.innerHTML = '&#8203;';
+    }
     pageBreakNode.parentNode.insertBefore(actionP, pageBreakNode.nextSibling);
 
-    const range = document.createRange();
-    const sel = window.getSelection();
-    range.setStart(actionP, 0);
-    range.collapse(true);
+    const newRange = document.createRange();
+    newRange.setStart(actionP, 0);
+    newRange.collapse(true);
     sel.removeAllRanges();
-    sel.addRange(range);
+    sel.addRange(newRange);
     
     actionP.focus();
     triggerBackup();
@@ -87,6 +110,11 @@ function updateToolbarUI(activeType) {
     });
 }
 
+// Prevents main formatting buttons from stealing focus from the editor!
+document.querySelectorAll('.tool-btn[data-type]').forEach(btn => {
+    btn.addEventListener('mousedown', e => e.preventDefault());
+});
+
 // Monitors context changes to match active styling buttons
 document.addEventListener('selectionchange', () => {
     const p = getCurrentParagraph();
@@ -108,6 +136,37 @@ function getHotkeyString(e) {
     return keys.join('+');
 }
 
+const defaultHotkeys = {
+    'scene-heading': 'ctrl+1',
+    'action': 'ctrl+2',
+    'character': 'ctrl+3',
+    'parenthetical': 'ctrl+4',
+    'dialogue': 'ctrl+5',
+    'transition': 'ctrl+6',
+    'shot': 'ctrl+7',
+    'page-break': 'ctrl+enter',
+    'bold': 'ctrl+b',
+    'italic': 'ctrl+i',
+    'underline': 'ctrl+u',
+    'strikethrough': 'ctrl+alt+x',
+    'toggle-case': 'ctrl+shift+u',
+    'add-revision': 'ctrl+]',
+    'remove-revision': 'ctrl+[',
+    'undo': 'ctrl+z',
+    'redo': 'ctrl+y',
+    'cut': 'ctrl+x',
+    'copy': 'ctrl+c',
+    'paste': 'ctrl+v',
+    'select-all': 'ctrl+a',
+    'find-replace': 'ctrl+f',
+    'print': 'ctrl+p',
+    'open-project': 'ctrl+o',
+    'save-project': 'ctrl+s',
+    'manage-backups': 'ctrl+shift+s',
+    'focus-mode': 'f11',
+    'toggle-menu': 'ctrl+m'
+};
+
 // Intercepting and mapping keystrokes explicitly
 editor.addEventListener('keydown', (e) => {
     const p = getCurrentParagraph();
@@ -116,32 +175,48 @@ editor.addEventListener('keydown', (e) => {
     const currentType = getLineType(p);
     const textContent = p.textContent.trim();
 
-    // Handle Ctrl+Enter for Page Breaks
-    if (e.key === 'Enter' && e.ctrlKey) {
-        e.preventDefault();
-        insertPageBreak();
-        return;
-    }
-
     // Handle Enter Key Behavior
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         
+        const sel = window.getSelection();
+        let textAfterCursor = "";
+        
+        if (sel.rangeCount > 0) {
+            const range = sel.getRangeAt(0);
+            if (!range.isCollapsed) {
+                range.deleteContents();
+            }
+            const endRange = range.cloneRange();
+            endRange.selectNodeContents(p);
+            endRange.setStart(range.endContainer, range.endOffset);
+            textAfterCursor = endRange.toString();
+            endRange.deleteContents();
+        }
+        
+        if (p.textContent === '') {
+            p.innerHTML = '&#8203;';
+        }
+
         let nextType = workflowRules[currentType].enter;
 
         // Traditional Option Context Overrides
-        if (currentType === 'action' && textContent === '') {
+        if (currentType === 'action' && p.textContent.replace(/\u200B/g, '').trim() === '') {
             nextType = 'character';
         }
 
         const newP = document.createElement('p');
         newP.className = nextType;
-        newP.innerHTML = '&#8203;'; // Set zero-width space to hold layout cursor open safely
+        textAfterCursor = textAfterCursor.replace(/\u200B/g, '');
+        if (textAfterCursor.length > 0) {
+            newP.textContent = textAfterCursor;
+        } else {
+            newP.innerHTML = '&#8203;'; // Set zero-width space to hold layout cursor open safely
+        }
         p.parentNode.insertBefore(newP, p.nextSibling);
 
         // Re-focus cursor down to new line
         const range = document.createRange();
-        const sel = window.getSelection();
         range.setStart(newP, 0);
         range.collapse(true);
         sel.removeAllRanges();
@@ -160,62 +235,6 @@ editor.addEventListener('keydown', (e) => {
         setLineType(nextType, p);
         return;
     }
-
-    // Dynamic Hotkeys Engine 
-    const hotkeyStr = getHotkeyString(e);
-    for (const [action, keyCombo] of Object.entries(appSettings.hotkeys || {})) {
-        if (hotkeyStr === keyCombo && hotkeyStr !== '') {
-            e.preventDefault();
-            setLineType(action, p);
-            return;
-        }
-    }
-
-    // Bindings for Explicit Line Conversions (Ctrl + Number combinations)
-    if (e.ctrlKey && !e.altKey && !e.shiftKey) {
-        const numMap = { '1': 'scene-heading', '2': 'action', '3': 'character', '4': 'parenthetical', '5': 'dialogue', '6': 'transition', '7': 'shot' };
-        if (numMap[e.key]) {
-            e.preventDefault();
-            setLineType(numMap[e.key], p);
-        }
-    }
-
-    // Bindings for Alt Key Conversions
-    if (e.altKey && !e.ctrlKey && !e.shiftKey) {
-        const altMap = { 's': 'scene-heading', 'a': 'action', 'c': 'character', 'p': 'parenthetical', 'd': 'dialogue', 't': 'transition', 'h': 'shot' };
-        const targetKey = e.key.toLowerCase();
-        if (altMap[targetKey]) {
-            e.preventDefault();
-            setLineType(altMap[targetKey], p);
-        }
-    }
-    
-    if (e.ctrlKey && e.key === ']') {
-        e.preventDefault();
-        if (currentDocument !== 'Revision Notes') {
-            p.classList.add('revision');
-            p.style.setProperty('--rev-color', appSettings.authorColor || '#ef4444');
-            p.setAttribute('data-author', appSettings.authorName || 'Writer');
-            p.setAttribute('data-rev-color', appSettings.authorColor || '#ef4444');
-            triggerBackup();
-        }
-        return;
-    }
-    if (e.ctrlKey && e.key === '[') {
-        e.preventDefault();
-        p.classList.remove('revision');
-        p.style.removeProperty('--rev-color');
-        p.removeAttribute('data-author');
-        p.removeAttribute('data-rev-color');
-        triggerBackup();
-        return;
-    }
-
-    // Strikethrough binding
-    if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'x') {
-        e.preventDefault();
-        document.execCommand('strikeThrough');
-    }
 });
 
 // Global Settings and Application State
@@ -223,19 +242,22 @@ let appSettings = {
     localDir: null,
     cloudDir: null,
     autoSaveInterval: 5,
-    maxBackupLimit: 50,
+    maxBackupLimit: 5,
     authorName: 'Writer',
     authorColor: '#ef4444',
     recentProjects: [],
     projectName: 'Quiet Hours 4th Draft',
     currentProjectFile: null,
-    sharedFolderLink: 'https://drive.google.com/',
+    sharedFolderLink: 'https://drive.google.com/drive/folders/1QCxirCdxxKAoazFJ3wP4L_LbJcwKqPWT?usp=sharing',
+    geminiApiKey: '',
     isRevisionMode: false,
     isFocusMode: false,
     showPageNumbers: false,
     showMenuBar: true,
     showFormatBtns: true,
     showWordCount: true,
+    showColorCodes: false,
+    elementColors: {},
     filterDialogue: false,
     filterNonDialogue: false,
     darkMode: false,
@@ -245,15 +267,7 @@ let appSettings = {
         'Revision Notes': '',
         'Title Page': ''
     },
-    hotkeys: {
-        'scene-heading': 'ctrl+1',
-        'action': 'ctrl+2',
-        'character': 'ctrl+3',
-        'parenthetical': 'ctrl+4',
-        'dialogue': 'ctrl+5',
-        'transition': 'ctrl+6',
-        'shot': 'ctrl+7'
-    }
+    hotkeys: { ...defaultHotkeys }
 };
 let currentDocument = 'Default Document';
 
@@ -268,6 +282,21 @@ document.querySelectorAll('.dropdown').forEach(menu => {
     });
 });
 document.addEventListener('click', () => { document.querySelectorAll('.dropdown').forEach(m => m.classList.remove('open')); });
+
+function updateHotkeyDisplay() {
+    document.querySelectorAll('[data-hotkey-display]').forEach(el => {
+        const action = el.getAttribute('data-hotkey-display');
+        if (appSettings.hotkeys && appSettings.hotkeys[action]) {
+            const parts = appSettings.hotkeys[action].split('+').map(p => p.charAt(0).toUpperCase() + p.slice(1));
+            if (el.tagName === 'SPAN') {
+                el.textContent = parts.join('-');
+            } else if (el.hasAttribute('title')) {
+                const baseTitle = el.getAttribute('title').split(' (')[0];
+                el.setAttribute('title', `${baseTitle} (${parts.join('+')})`);
+            }
+        }
+    });
+}
 
 // Core Initialization (Load via PyWebView or LocalStorage)
 let isAppReady = false;
@@ -286,10 +315,10 @@ window.addEventListener('pywebviewready', async () => {
             appSettings.projectDocuments['Revision Notes'] = appSettings.projectDocuments['Private Pad'];
             delete appSettings.projectDocuments['Private Pad'];
         }
-        if (!appSettings.hotkeys) appSettings.hotkeys = {
-            'scene-heading': 'ctrl+1', 'action': 'ctrl+2', 'character': 'ctrl+3', 
-            'parenthetical': 'ctrl+4', 'dialogue': 'ctrl+5', 'transition': 'ctrl+6', 'shot': 'ctrl+7'
-        };
+        if (!appSettings.hotkeys) appSettings.hotkeys = {};
+        for (const [k, v] of Object.entries(defaultHotkeys)) {
+            if (appSettings.hotkeys[k] === undefined) appSettings.hotkeys[k] = v;
+        }
     }
 
     const initialFile = await window.pywebview.api.get_initial_file();
@@ -303,7 +332,7 @@ window.addEventListener('pywebviewready', async () => {
             appSettings.projectDocuments = parsed;
             currentDocument = Object.keys(parsed)[0] || 'Default Document';
             appSettings.currentProjectFile = initialFile.filepath;
-            const filename = initialFile.filepath.split('\\').pop().split('/').pop().replace('.ksp', '');
+            const filename = initialFile.filepath.split('\\').pop().split('/').pop().replace(/\.(rsp|ksp)$/i, '');
             updateProjectName(filename);
             addToRecent(initialFile.filepath);
             saveSettings();
@@ -323,10 +352,10 @@ window.addEventListener('DOMContentLoaded', () => {
                     appSettings.projectDocuments['Revision Notes'] = appSettings.projectDocuments['Private Pad'];
                     delete appSettings.projectDocuments['Private Pad'];
                 }
-                if (!appSettings.hotkeys) appSettings.hotkeys = {
-                    'scene-heading': 'ctrl+1', 'action': 'ctrl+2', 'character': 'ctrl+3', 
-                    'parenthetical': 'ctrl+4', 'dialogue': 'ctrl+5', 'transition': 'ctrl+6', 'shot': 'ctrl+7'
-                };
+                if (!appSettings.hotkeys) appSettings.hotkeys = {};
+                for (const [k, v] of Object.entries(defaultHotkeys)) {
+                    if (appSettings.hotkeys[k] === undefined) appSettings.hotkeys[k] = v;
+                }
             }
             const legacyBackup = localStorage.getItem('kindred_script_backup');
             if (legacyBackup && !appSettings.projectDocuments['Default Document']) {
@@ -341,6 +370,7 @@ function initializeEnvironment() {
     applySettingsToUI();
     loadCurrentDocument();
     rebuildDocumentSidebar();
+    updateHotkeyDisplay();
 }
 
 function applySettingsToUI() {
@@ -404,6 +434,21 @@ function applySettingsToUI() {
     if (wordCountCheck) {
         wordCountCheck.style.visibility = appSettings.showWordCount ? 'visible' : 'hidden';
     }
+    const colorCodesCheck = document.getElementById('color-codes-check');
+    if (colorCodesCheck) {
+        colorCodesCheck.style.visibility = appSettings.showColorCodes ? 'visible' : 'hidden';
+    }
+    document.body.classList.toggle('color-codes-active', appSettings.showColorCodes);
+    
+    const colors = appSettings.elementColors || {};
+    document.documentElement.style.setProperty('--color-scene', colors.scene || '');
+    document.documentElement.style.setProperty('--color-action', colors.action || '');
+    document.documentElement.style.setProperty('--color-character', colors.character || '');
+    document.documentElement.style.setProperty('--color-parenthetical', colors.parenthetical || '');
+    document.documentElement.style.setProperty('--color-dialogue', colors.dialogue || '');
+    document.documentElement.style.setProperty('--color-transition', colors.transition || '');
+    document.documentElement.style.setProperty('--color-shot', colors.shot || '');
+    
     const filterDialogueCheck = document.getElementById('filter-dialogue-check');
     if (filterDialogueCheck) {
         filterDialogueCheck.style.visibility = appSettings.filterDialogue ? 'visible' : 'hidden';
@@ -461,6 +506,13 @@ function saveSettings() {
 function loadCurrentDocument() {
     editor.innerHTML = appSettings.projectDocuments[currentDocument] || '<p class="action">&#8203;</p>';
     editor.setAttribute('data-docname', currentDocument);
+    
+    if (currentDocument === 'Title Page') {
+        editor.classList.add('title-page-active');
+    } else {
+        editor.classList.remove('title-page-active');
+    }
+    
     updateToolbarUI(getLineType(getCurrentParagraph()));
     updateStats();
     if (typeof buildScenesList === 'function' && document.getElementById('sidebar-scenes-view') && document.getElementById('sidebar-scenes-view').style.display === 'flex') {
@@ -473,15 +525,99 @@ function saveCurrentDocument() {
     saveSettings();
 }
 
+const newProjectModal = document.getElementById('new-project-modal');
+const newProjectNameInput = document.getElementById('new-project-name');
+const newProjectLocalDirInput = document.getElementById('new-project-local-dir');
+const newProjectCloudDirInput = document.getElementById('new-project-cloud-dir');
+
 document.getElementById('file-menu-new').addEventListener('click', () => {
     if (confirm("Create a new project? Any unsaved changes will be lost.")) {
-        appSettings.projectDocuments = { 'Default Document': '<p class="action">&#8203;</p>', 'Revision Notes': '', 'Title Page': '' };
-        currentDocument = 'Default Document';
-        appSettings.currentProjectFile = null;
-        updateProjectName("Untitled Project");
-        saveSettings();
-        initializeEnvironment();
+        newProjectNameInput.value = 'Untitled Project';
+        newProjectLocalDirInput.value = appSettings.localDir || '';
+        if (newProjectCloudDirInput) newProjectCloudDirInput.value = appSettings.cloudDir || '';
+        newProjectModal.style.display = 'flex';
     }
+});
+
+document.getElementById('btn-cancel-new-project').addEventListener('click', () => {
+    newProjectModal.style.display = 'none';
+});
+
+document.getElementById('btn-browse-new-local').addEventListener('click', async () => {
+    if (window.pywebview) {
+        const folderPath = await window.pywebview.api.choose_directory();
+        if (folderPath && folderPath !== "None") {
+            newProjectLocalDirInput.value = folderPath;
+        }
+    } else {
+        alert("Folder picker requires running through the Python app wrapper.");
+    }
+});
+
+const btnBrowseNewCloud = document.getElementById('btn-browse-new-cloud');
+if (btnBrowseNewCloud) {
+    btnBrowseNewCloud.addEventListener('click', async () => {
+        if (window.pywebview) {
+            const folderPath = await window.pywebview.api.choose_directory();
+            if (folderPath && folderPath !== "None") {
+                newProjectCloudDirInput.value = folderPath;
+            }
+        } else {
+            alert("Folder picker requires running through the Python app wrapper.");
+        }
+    });
+}
+
+document.getElementById('btn-create-new-project').addEventListener('click', async () => {
+    const newName = newProjectNameInput.value.trim() || 'Untitled Project';
+    const newLocalDir = newProjectLocalDirInput.value.trim();
+    const newCloudDir = newProjectCloudDirInput ? newProjectCloudDirInput.value.trim() : '';
+
+    if (newLocalDir) {
+        appSettings.localDir = newLocalDir;
+    }
+    if (newCloudDir) {
+        appSettings.cloudDir = newCloudDir;
+    }
+
+    let cloudFolderPath = null;
+    if (window.pywebview && appSettings.cloudDir) {
+        const result = await window.pywebview.api.create_project_folder(appSettings.cloudDir, newName);
+        if (result && result.success) {
+            cloudFolderPath = result.path;
+        } else if (result && result.error) {
+            alert("Could not create cloud folder: " + result.error);
+        }
+    }
+
+    appSettings.projectDocuments = { 'Default Document': '<p class="action">&#8203;</p>', 'Revision Notes': '', 'Title Page': '' };
+    currentDocument = 'Default Document';
+    updateProjectName(newName);
+    
+    if (window.pywebview) {
+        const projectData = JSON.stringify(appSettings.projectDocuments);
+        const safeName = newName.replace(/[\\/:*?"<>|]/g, '');
+        let savedPath = null;
+        
+        if (cloudFolderPath) {
+            savedPath = cloudFolderPath + '\\' + safeName + '.rsp';
+            await window.pywebview.api.save_project(projectData, savedPath);
+        } else if (newLocalDir) {
+            savedPath = newLocalDir + '\\' + safeName + '.rsp';
+            await window.pywebview.api.save_project(projectData, savedPath);
+        }
+        
+        appSettings.currentProjectFile = savedPath;
+        if (savedPath) addToRecent(savedPath);
+    } else {
+        appSettings.currentProjectFile = null;
+    }
+
+    saveSettings();
+    initializeEnvironment();
+    triggerBackup(); // Safely flushes the initialized state into the new folders
+    
+    newProjectModal.style.display = 'none';
 });
 
 async function handleOpenProject() {
@@ -497,7 +633,7 @@ async function handleOpenProject() {
                 appSettings.projectDocuments = parsed;
                 currentDocument = Object.keys(parsed)[0] || 'Default Document';
                 appSettings.currentProjectFile = result.filepath;
-                const filename = result.filepath.split('\\').pop().split('/').pop().replace('.ksp', '');
+                const filename = result.filepath.split('\\').pop().split('/').pop().replace(/\.(rsp|ksp)$/i, '');
                 updateProjectName(filename);
                 saveSettings();
                 initializeEnvironment();
@@ -508,7 +644,6 @@ async function handleOpenProject() {
 }
 
 document.getElementById('file-menu-open').addEventListener('click', handleOpenProject);
-document.getElementById('sidebar-open-project').addEventListener('click', handleOpenProject);
 
 async function handleSave() {
     saveCurrentDocument();
@@ -541,7 +676,7 @@ async function handleSaveAs() {
         const result = await window.pywebview.api.save_project_dialog(projectData, projectName);
         if (result && !result.startsWith("Error")) {
             appSettings.currentProjectFile = result;
-            const filename = result.split('\\').pop().split('/').pop().replace('.ksp', '');
+            const filename = result.split('\\').pop().split('/').pop().replace(/\.(rsp|ksp)$/i, '');
             updateProjectName(filename);
             addToRecent(result);
             alert("Project saved as successfully!");
@@ -592,7 +727,7 @@ function triggerBackup() {
                 appSettings.cloudDir, 
                 appSettings.localDir, 
                 appSettings.projectName,
-                appSettings.maxBackupLimit || 50
+                appSettings.maxBackupLimit || 5
             ).then(response => {
                 syncDot.style.backgroundColor = '#10b981';
                 syncText.textContent = response;
@@ -606,6 +741,126 @@ function triggerBackup() {
     }, 1200);
 }
 
+function autoPaginate() {
+    if (currentDocument === 'Title Page') return;
+
+    // Save active element, selection, and scroll offset to prevent visual jumping
+    const workspace = document.querySelector('.workspace');
+    const sel = window.getSelection();
+    let savedRange = null;
+    let activeNode = null;
+    let activeNodeOffset = 0;
+
+    if (sel.rangeCount > 0 && editor.contains(sel.anchorNode)) {
+        savedRange = sel.getRangeAt(0).cloneRange();
+        activeNode = getCurrentParagraph();
+        if (activeNode && workspace) {
+            activeNodeOffset = activeNode.getBoundingClientRect().top;
+        }
+    }
+
+    const PPI = 96;
+    const PAGE_HEIGHT = 11 * PPI;
+    const BOTTOM_MARGIN = 1 * PPI;
+    const TOP_MARGIN = 1 * PPI;
+
+    const paragraphs = Array.from(editor.querySelectorAll('p'));
+    
+    // First pass: reset all custom top margins to calculate natural flow
+    paragraphs.forEach(p => {
+        if (!p.classList.contains('page-break')) {
+            p.style.marginTop = '';
+        }
+    });
+
+    let forceNextPage = false;
+
+    for (let i = 0; i < paragraphs.length; i++) {
+        let p = paragraphs[i];
+
+        if (p.classList.contains('page-break')) {
+            forceNextPage = true;
+            continue;
+        }
+
+        let top = p.offsetTop;
+        let height = p.offsetHeight;
+        let bottom = top + height;
+
+        let pageNum = Math.floor(top / PAGE_HEIGHT) + 1;
+        let pageBottomLimit = (pageNum * PAGE_HEIGHT) - BOTTOM_MARGIN;
+
+        if (forceNextPage || bottom > pageBottomLimit) {
+            if (height > (PAGE_HEIGHT - TOP_MARGIN - BOTTOM_MARGIN) && !forceNextPage) {
+                continue; // Ignore excessively long Action paragraphs that wouldn't fit on one page anyway
+            }
+
+            let targetNode = p;
+            let type = getLineType(p);
+
+            // Screenplay Widow/Orphan rules (keeps Characters grouped with their Dialogue)
+            if (!forceNextPage) {
+                if (type === 'dialogue') {
+                    if (i > 0 && getLineType(paragraphs[i-1]) === 'parenthetical') {
+                        targetNode = paragraphs[i-1];
+                        if (i > 1 && getLineType(paragraphs[i-2]) === 'character') {
+                            targetNode = paragraphs[i-2];
+                        }
+                    } else if (i > 0 && getLineType(paragraphs[i-1]) === 'character') {
+                        targetNode = paragraphs[i-1];
+                    }
+                } else if (type === 'parenthetical') {
+                    if (i > 0 && getLineType(paragraphs[i-1]) === 'character') {
+                        targetNode = paragraphs[i-1];
+                    }
+                }
+            }
+
+            top = targetNode.offsetTop;
+            pageNum = Math.floor(top / PAGE_HEIGHT) + 1;
+            const nextPageTop = (pageNum * PAGE_HEIGHT) + TOP_MARGIN;
+            const pushAmount = nextPageTop - top;
+            
+            const currentMarginTop = parseFloat(window.getComputedStyle(targetNode).marginTop) || 0;
+            targetNode.style.marginTop = (currentMarginTop + pushAmount) + 'px';
+            
+            forceNextPage = false;
+        }
+    }
+
+    // Restore selection and scroll position seamlessly
+    if (savedRange) {
+        sel.removeAllRanges();
+        sel.addRange(savedRange);
+    }
+
+    if (activeNode && workspace) {
+        const newOffset = activeNode.getBoundingClientRect().top;
+        const diff = newOffset - activeNodeOffset;
+        if (Math.abs(diff) > 0) {
+            workspace.scrollTop += diff;
+        }
+    }
+}
+
+function updatePageNumbersDisplay(pages, pageHeightPixels) {
+    const overlay = document.getElementById('page-numbers-overlay');
+    if (!overlay) return;
+    
+    overlay.innerHTML = '';
+    if (!appSettings.showPageNumbers) return;
+
+    // Start numbering from page 2, per industry standard
+    for (let i = 2; i <= pages; i++) {
+        const num = document.createElement('div');
+        num.className = 'editor-page-number';
+        num.textContent = `${i}.`;
+        // 0.5 inches (48px) from the top edge of each simulated 11-inch page
+        num.style.top = `${((i - 1) * pageHeightPixels) + 48}px`;
+        overlay.appendChild(num);
+    }
+}
+
 function updateStats() {
     // Get raw text, remove our zero-width cursor spacers, and split by whitespace
     let text = editor.innerText || "";
@@ -614,13 +869,61 @@ function updateStats() {
     
     // A standard page is 11 inches. Assuming standard 96 CSS pixels per inch
     const pageHeightPixels = 11 * 96;
-    const pages = Math.max(1, Math.ceil(editor.scrollHeight / pageHeightPixels));
+    let pages = Math.max(1, Math.ceil(editor.scrollHeight / pageHeightPixels));
     
     const statsEl = document.getElementById('status-stats');
     if (statsEl) statsEl.textContent = `${words} words | ${pages} page${pages !== 1 ? 's' : ''}`;
+    
+    updatePageNumbersDisplay(pages, pageHeightPixels);
+
+    clearTimeout(window.paginateTimeout);
+    window.paginateTimeout = setTimeout(() => {
+        autoPaginate();
+        pages = Math.max(1, Math.ceil(editor.scrollHeight / pageHeightPixels));
+        if (statsEl) statsEl.textContent = `${words} words | ${pages} page${pages !== 1 ? 's' : ''}`;
+        updatePageNumbersDisplay(pages, pageHeightPixels);
+    }, 800);
 }
 
+let isAutoCapitalizing = false;
+
 editor.addEventListener('input', () => {
+    if (isAutoCapitalizing) return;
+
+    const sel = window.getSelection();
+    if (sel.isCollapsed && sel.rangeCount > 0) {
+        const range = sel.getRangeAt(0);
+        const node = range.startContainer;
+        
+        if (node.nodeType === Node.TEXT_NODE) {
+            const p = getCurrentParagraph();
+            if (p) {
+                const lineType = getLineType(p);
+                // Only auto-capitalize Action and Dialogue lines (others are CSS uppercase by default)
+                if (lineType === 'action' || lineType === 'dialogue') {
+                    const startOffset = range.startOffset;
+                    const textBefore = node.nodeValue.substring(0, startOffset);
+                    
+                    // Match lowercase letters at the start of a paragraph or after punctuation + spaces
+                    const match = textBefore.match(/(?:^|[\u200B.!?]\s+['"]?|\u200B['"]?)([a-z])$/);
+                    if (match) {
+                        const upperChar = match[1].toUpperCase();
+                        isAutoCapitalizing = true;
+                        
+                        const replaceRange = document.createRange();
+                        replaceRange.setStart(node, startOffset - 1);
+                        replaceRange.setEnd(node, startOffset);
+                        sel.removeAllRanges();
+                        sel.addRange(replaceRange);
+                        
+                        document.execCommand('insertText', false, upperChar);
+                        isAutoCapitalizing = false;
+                    }
+                }
+            }
+        }
+    }
+
     if (appSettings.isRevisionMode && currentDocument !== 'Revision Notes') {
         const p = getCurrentParagraph();
         if (p && !p.classList.contains('page-break')) {
@@ -662,7 +965,7 @@ document.getElementById('auto-save-interval').addEventListener('change', (e) => 
 });
 
 document.getElementById('max-backup-limit').addEventListener('change', (e) => {
-    appSettings.maxBackupLimit = parseInt(e.target.value, 10) || 50;
+    appSettings.maxBackupLimit = parseInt(e.target.value, 10) || 5;
     saveSettings();
 });
 
@@ -736,6 +1039,7 @@ document.getElementById('btn-save-hotkeys').addEventListener('click', () => {
         appSettings.hotkeys[action] = input.value;
     });
     saveSettings();
+    updateHotkeyDisplay();
     hotkeysModal.style.display = 'none';
 });
 
@@ -815,12 +1119,19 @@ function handleExport(format) {
     }
 
     if (window.pywebview) {
-        const lines = Array.from(editor.querySelectorAll('p')).map(p => ({
-            type: getLineType(p),
-            text: p.textContent,
-            revision: p.classList.contains('revision'),
-            revColor: p.getAttribute('data-rev-color') || '#ef4444'
-        }));
+        const lines = Array.from(editor.querySelectorAll('p')).map(p => {
+            let type = getLineType(p);
+            let text = p.textContent;
+            if (['scene-heading', 'character', 'transition', 'shot'].includes(type)) {
+                text = text.toUpperCase();
+            }
+            return {
+                type: type,
+                text: text,
+                revision: p.classList.contains('revision'),
+                revColor: p.getAttribute('data-rev-color') || '#ef4444'
+            };
+        });
         
         // Extract Title Page lines if content exists
         let titleLines = [];
@@ -828,12 +1139,19 @@ function handleExport(format) {
         if (titleHtml) {
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = titleHtml;
-            titleLines = Array.from(tempDiv.querySelectorAll('p')).map(p => ({
-                type: getLineType(p),
-                text: p.textContent,
-                revision: p.classList.contains('revision'),
-                revColor: p.getAttribute('data-rev-color') || '#ef4444'
-            }));
+            titleLines = Array.from(tempDiv.querySelectorAll('p')).map(p => {
+                let align = 'C';
+                if (p.classList.contains('align-left')) align = 'L';
+                if (p.classList.contains('align-right')) align = 'R';
+                
+                return {
+                    type: getLineType(p),
+                    text: p.textContent,
+                    align: align,
+                    revision: p.classList.contains('revision'),
+                    revColor: p.getAttribute('data-rev-color') || '#ef4444'
+                };
+            });
         }
 
         syncDot.style.backgroundColor = '#f59e0b';
@@ -862,7 +1180,7 @@ function handleExport(format) {
             syncText.textContent = response;
         });
     } else {
-        alert("Export requires running the Python app wrapper (desktop.py).");
+        alert("Export requires running the Python app wrapper (reelscript.pyw).");
     }
 }
 document.getElementById('export-pdf-sidebar-btn').addEventListener('click', () => handleExport('pdf'));
@@ -874,36 +1192,94 @@ document.getElementById('file-menu-export-wd').addEventListener('click', () => h
 document.getElementById('file-menu-print').addEventListener('click', () => {
     window.print();
 });
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'F11') {
-        e.preventDefault();
-        toggleFocusMode();
-    }
+
+// MASTER GLOBAL HOTKEY INTERCEPTOR (CAPTURE PHASE)
+document.addEventListener('keydown', async (e) => {
     if (e.key === 'Escape' && appSettings.isFocusMode) {
         e.preventDefault();
         toggleFocusMode();
+        return;
     }
-    if (e.ctrlKey && e.key.toLowerCase() === 'f') {
+    
+    // Do not interfere if user is currently binding keys in the Hotkey Window
+    const hModal = document.getElementById('hotkeys-modal');
+    if (hModal && hModal.style.display === 'flex') return;
+
+    const hotkeyStr = getHotkeyString(e);
+    if (!hotkeyStr || hotkeyStr === 'ctrl' || hotkeyStr === 'alt' || hotkeyStr === 'shift') return;
+
+    let matchedAction = null;
+    for (const [action, keyCombo] of Object.entries(appSettings.hotkeys || {})) {
+        if (hotkeyStr === keyCombo && keyCombo !== '') {
+            matchedAction = action;
+            break;
+        }
+    }
+
+    if (matchedAction) {
         e.preventDefault();
-        openFindReplace();
+        e.stopPropagation();
+
+        const p = getCurrentParagraph();
+        const lineTypes = ['scene-heading', 'action', 'character', 'parenthetical', 'dialogue', 'transition', 'shot'];
+        
+        if (lineTypes.includes(matchedAction)) {
+            if (p) setLineType(matchedAction, p);
+        } else {
+            switch (matchedAction) {
+                case 'page-break': if (p) insertPageBreak(); break;
+                case 'bold': document.execCommand('bold'); updateMiniToolbarState(); break;
+                case 'italic': document.execCommand('italic'); updateMiniToolbarState(); break;
+                case 'underline': document.execCommand('underline'); updateMiniToolbarState(); break;
+                case 'strikethrough': document.execCommand('strikeThrough'); break;
+                case 'toggle-case': toggleCase(); break;
+                case 'undo': document.execCommand('undo'); triggerBackup(); updateStats(); break;
+                case 'redo': document.execCommand('redo'); triggerBackup(); updateStats(); break;
+                case 'cut': document.execCommand('cut'); triggerBackup(); updateStats(); break;
+                case 'copy': document.execCommand('copy'); break;
+                case 'paste': 
+                    try {
+                        let text = await navigator.clipboard.readText();
+                        text = text.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
+                        if (text.includes('\n')) {
+                            const html = processImportedText(text, true);
+                            document.execCommand('insertHTML', false, html);
+                        } else {
+                            document.execCommand('insertText', false, text);
+                        }
+                        triggerBackup(); updateStats();
+                    } catch (err) { document.execCommand('paste'); }
+                    break;
+                case 'select-all': document.execCommand('selectAll'); break;
+                case 'add-revision': 
+                    if (p && currentDocument !== 'Revision Notes') {
+                        p.classList.add('revision');
+                        p.style.setProperty('--rev-color', appSettings.authorColor || '#ef4444');
+                        p.setAttribute('data-author', appSettings.authorName || 'Writer');
+                        p.setAttribute('data-rev-color', appSettings.authorColor || '#ef4444');
+                        triggerBackup();
+                    }
+                    break;
+                case 'remove-revision': 
+                    if (p) {
+                        p.classList.remove('revision');
+                        p.style.removeProperty('--rev-color');
+                        p.removeAttribute('data-author');
+                        p.removeAttribute('data-rev-color');
+                        triggerBackup();
+                    }
+                    break;
+                case 'find-replace': openFindReplace(); break;
+                case 'print': window.print(); break;
+                case 'open-project': handleOpenProject(); break;
+                case 'save-project': handleSave(); break;
+                case 'manage-backups': backupModal.style.display = 'flex'; break;
+                case 'focus-mode': toggleFocusMode(); break;
+                case 'toggle-menu': toggleMenuBar(); break;
+            }
+        }
     }
-    if (e.ctrlKey && e.key.toLowerCase() === 'p') {
-        e.preventDefault();
-        window.print();
-    }
-    if (e.ctrlKey && e.key.toLowerCase() === 'o') {
-        e.preventDefault();
-        handleOpenProject();
-    }
-    if (e.ctrlKey && e.key.toLowerCase() === 's') {
-        e.preventDefault();
-        e.shiftKey ? backupModal.style.display = 'flex' : handleSave();
-    }
-    if (e.ctrlKey && e.key.toLowerCase() === 'm') {
-        e.preventDefault();
-        toggleMenuBar();
-    }
-});
+}, true); // Fire during capture-phase so we catch shortcuts before the editor eats them!
 
 // File Import Handling
 async function handleImport() {
@@ -952,7 +1328,7 @@ async function handleImport() {
                 if (i === 1 && pdf.numPages > 1) {
                     titlePageText = pageText;
                 } else {
-                    fullText += pageText + (i < pdf.numPages ? "\n\n===\n\n" : "");
+                    fullText += pageText + (i < pdf.numPages ? "\n\n" : "");
                 }
             }
             if (titlePageText) {
@@ -1007,14 +1383,22 @@ function processImportedText(content, returnHtmlOnly = false) {
             continue;
         }
 
+        // Skip standalone page numbers (e.g. "1.", "2.", "45", "- 2 -", "Page 2")
+        if (/^\d+\s*\.?$/.test(trimmed) || /^-\s*\d+\s*-$/.test(trimmed) || /^page\s*\d+\.?$/i.test(trimmed)) {
+            continue;
+        }
+
+        // Skip redundant page breaks
+        if (trimmed.startsWith('===')) {
+            continue;
+        }
+
         let type = 'action';
         let isAllCaps = (trimmed === trimmed.toUpperCase() && /[A-Z]/.test(trimmed));
         const leadingSpaces = rawLine.length - rawLine.trimStart().length;
 
         // Fountain-style Heuristic Ruleset
-        if (trimmed.startsWith('===')) {
-            type = 'page-break';
-        } else if (/^(INT\.|EXT\.|INT\/EXT\.|I\/E\.|INT |EXT )/i.test(trimmed)) {
+        if (/^(INT\.|EXT\.|INT\/EXT\.|I\/E\.|INT |EXT )/i.test(trimmed)) {
             type = 'scene-heading';
         } else if (isAllCaps && (trimmed.endsWith(' TO:') || trimmed === 'FADE IN:' || trimmed === 'FADE OUT.')) {
             type = 'transition';
@@ -1105,7 +1489,7 @@ document.getElementById('file-import').addEventListener('change', async (e) => {
                 if (i === 1 && pdf.numPages > 1) {
                     titlePageText = pageText;
                 } else {
-                    fullText += pageText + (i < pdf.numPages ? "\n\n===\n\n" : "");
+                    fullText += pageText + (i < pdf.numPages ? "\n\n" : "");
                 }
             }
             if (titlePageText) {
@@ -1360,6 +1744,8 @@ document.addEventListener('mouseup', () => {
     }
 });
 
+let currentSuggestionRange = null;
+
 function openAiSuggestionModal(selectedText) {
     aiSuggModal.style.display = 'flex';
     if (appSettings.aiSuggPos && appSettings.aiSuggPos.left) {
@@ -1370,7 +1756,46 @@ function openAiSuggestionModal(selectedText) {
     aiSuggContent.innerHTML = "<em>Analyzing text and generating suggestions...</em>";
     if (window.pywebview) {
         window.pywebview.api.get_ai_suggestions(selectedText).then(suggestions => {
-            aiSuggContent.innerHTML = (suggestions && !suggestions.startsWith("Error")) ? suggestions.replace(/\n/g, '<br>') : "No suggestions available.";
+            if (!suggestions || suggestions.startsWith("Error")) {
+                aiSuggContent.innerHTML = suggestions || "No suggestions available.";
+                return;
+            }
+            
+            aiSuggContent.innerHTML = '';
+            
+            // Split by the new delimiter, fallback to double-newlines if AI forgets the rule
+            let parts = suggestions.split('|||').map(s => s.trim()).filter(s => s.length > 0);
+            if (parts.length === 1 && !suggestions.includes('|||')) {
+                parts = suggestions.split(/\n\n+/).map(s => s.trim()).filter(s => s.length > 0);
+            }
+            
+            parts.forEach((part, index) => {
+                const div = document.createElement('div');
+                div.style.marginBottom = '15px';
+                div.style.paddingBottom = '15px';
+                if (index < parts.length - 1) div.style.borderBottom = '1px solid #36424e';
+                
+                // Clean up any AI numbering (e.g. "1. ", "Option 1: ")
+                const cleanText = part.replace(/^(\*?\*?Option\s*\d+:?\*?\*?|\d+\.)\s*/i, '').trim();
+                
+                const textSpan = document.createElement('span');
+                textSpan.innerHTML = cleanText.replace(/\n/g, '<br>');
+                textSpan.style.display = 'block';
+                textSpan.style.marginBottom = '10px';
+                
+                const applyBtn = document.createElement('button');
+                applyBtn.className = 'modal-btn';
+                applyBtn.style.padding = '4px 8px';
+                applyBtn.style.fontSize = '11px';
+                applyBtn.style.backgroundColor = '#1b8adb';
+                applyBtn.textContent = '✨ Apply this suggestion';
+                
+                applyBtn.addEventListener('click', () => applyAiSuggestion(cleanText));
+                
+                div.appendChild(textSpan);
+                div.appendChild(applyBtn);
+                aiSuggContent.appendChild(div);
+            });
         });
     } else { aiSuggContent.innerHTML = "<em>Python backend is required for AI features.</em>"; }
 }
@@ -1389,6 +1814,9 @@ if (formatToolbar) {
         if (sel.isCollapsed || !editor.contains(sel.anchorNode)) {
             alert("Please highlight some text in the editor to get suggestions.");
             return;
+        }
+        if (sel.rangeCount > 0) {
+            currentSuggestionRange = sel.getRangeAt(0).cloneRange();
         }
         
         openAiSuggestionModal(sel.toString().trim());
@@ -1422,6 +1850,9 @@ if (formatToolbar) {
         for (let i = startIndex + 1; i < paragraphs.length; i++) {
             if (paragraphs[i].classList.contains('scene-heading')) { endIndex = i; break; }
         }
+        
+        const sceneName = paragraphs[startIndex] ? paragraphs[startIndex].textContent.toUpperCase() : 'UNTITLED SCENE';
+        window.currentAiReportName = (appSettings.projectName || 'Untitled Project') + ' - ' + sceneName;
 
         // We send empty strings for outside elements so absolute line numbers stay identical for the Python script!
         const sceneParagraphs = paragraphs.map((p, index) => (index >= startIndex && index < endIndex) ? p.textContent : "");
@@ -1447,8 +1878,24 @@ if (ctxAiFix) {
         const sel = window.getSelection();
         if (sel.isCollapsed || !editor.contains(sel.anchorNode)) return;
         
+        if (sel.rangeCount > 0) {
+            currentSuggestionRange = sel.getRangeAt(0).cloneRange();
+        }
         openAiSuggestionModal(sel.toString());
     });
+}
+
+// Executes the replacement smoothly
+function applyAiSuggestion(textToInsert) {
+    if (currentSuggestionRange) {
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(currentSuggestionRange);
+        document.execCommand('insertText', false, textToInsert);
+        aiSuggModal.style.display = 'none';
+        triggerBackup();
+        updateStats();
+    }
 }
 
 // Hide menu on outside click
@@ -1554,7 +2001,12 @@ const handlePaste = async (e) => {
     try {
         let text = await navigator.clipboard.readText();
         text = text.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
-        document.execCommand('insertText', false, text); // Insert as pure plain text
+        if (text.includes('\n')) {
+            const html = processImportedText(text, true);
+            document.execCommand('insertHTML', false, html);
+        } else {
+            document.execCommand('insertText', false, text); // Insert as pure plain text
+        }
     } catch (err) { document.execCommand('paste'); }
     if (contextMenu) contextMenu.style.display = 'none';
     triggerBackup(); updateStats();
@@ -1567,6 +2019,21 @@ if (editPasteBtn) {
     editPasteBtn.addEventListener('mousedown', handlePaste);
 }
 
+// Intercept all native pasting (Ctrl+V and native Right-Click -> Paste) to force plain text
+editor.addEventListener('paste', (e) => {
+    e.preventDefault();
+    let text = (e.clipboardData || window.clipboardData).getData('text');
+    text = text.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
+    if (text.includes('\n')) {
+        const html = processImportedText(text, true);
+        document.execCommand('insertHTML', false, html);
+    } else {
+        document.execCommand('insertText', false, text);
+    }
+    triggerBackup(); 
+    updateStats();
+});
+
 const editPageBreakBtn = document.getElementById('edit-page-break');
 if (editPageBreakBtn) {
     editPageBreakBtn.addEventListener('mousedown', (e) => {
@@ -1577,8 +2044,96 @@ if (editPageBreakBtn) {
 }
 
 // --- Share Menu Logic ---
+document.getElementById('share-load-latest').addEventListener('click', async () => {
+    if (!window.pywebview) {
+        alert("This feature requires the Python backend.");
+        return;
+    }
+    
+    if (!appSettings.cloudDir) {
+        alert("Please configure a Cloud Backup folder (e.g., your Google Drive folder) in 'Manage Backups & Auto-Save' first.");
+        return;
+    }
+    
+    syncDot.style.backgroundColor = '#f59e0b';
+    syncText.textContent = 'Loading latest from cloud...';
+    
+    const projectName = appSettings.projectName || "Untitled Project";
+    const result = await window.pywebview.api.load_latest_cloud(appSettings.cloudDir, projectName);
+    
+    if (result.error) {
+        alert(result.error);
+        syncDot.style.backgroundColor = '#ef4444';
+        syncText.textContent = 'Cloud load failed';
+    } else if (result.not_found) {
+        syncDot.style.backgroundColor = '#ef4444';
+        syncText.textContent = 'Cloud file not found';
+        if (confirm(`${result.message}\n\nWould you like to save this current project as the latest instead?`)) {
+            document.getElementById('share-save-latest').click();
+        }
+    } else if (result.data) {
+        try {
+            const parsed = JSON.parse(result.data);
+            if (parsed['Private Pad'] !== undefined) {
+                parsed['Revision Notes'] = parsed['Private Pad'];
+                delete parsed['Private Pad'];
+            }
+            appSettings.projectDocuments = parsed;
+            currentDocument = Object.keys(parsed)[0] || 'Default Document';
+            appSettings.currentProjectFile = result.filepath;
+            
+            saveSettings();
+            initializeEnvironment();
+            addToRecent(result.filepath);
+            
+            syncDot.style.backgroundColor = '#10b981';
+            syncText.textContent = 'Loaded from cloud';
+            alert("Successfully loaded the latest project from the cloud.");
+        } catch (e) {
+            alert("Invalid project file.");
+            syncDot.style.backgroundColor = '#ef4444';
+            syncText.textContent = 'Cloud load failed';
+        }
+    }
+});
+
+document.getElementById('share-save-latest').addEventListener('click', async () => {
+    if (!window.pywebview) {
+        alert("This feature requires the Python backend.");
+        return;
+    }
+    
+    if (!appSettings.cloudDir) {
+        alert("Please configure a Cloud Backup folder (e.g., your Google Drive folder) in 'Manage Backups & Auto-Save' first.");
+        return;
+    }
+    
+    saveCurrentDocument();
+    const projectData = JSON.stringify(appSettings.projectDocuments);
+    const projectName = appSettings.projectName || "Untitled Project";
+    
+    syncDot.style.backgroundColor = '#f59e0b';
+    syncText.textContent = 'Saving latest to cloud...';
+    
+    const result = await window.pywebview.api.save_latest_cloud(appSettings.cloudDir, projectName, projectData);
+    
+    if (result.error) {
+        alert(result.error);
+        syncDot.style.backgroundColor = '#ef4444';
+        syncText.textContent = 'Cloud save failed';
+    } else if (result.success) {
+        appSettings.currentProjectFile = result.filepath;
+        addToRecent(result.filepath);
+        saveSettings();
+        
+        syncDot.style.backgroundColor = '#10b981';
+        syncText.textContent = 'Saved to cloud';
+        alert("Successfully saved the latest project to the cloud.");
+    }
+});
+
 document.getElementById('share-gdrive').addEventListener('click', () => {
-    const link = appSettings.sharedFolderLink || 'https://drive.google.com/';
+    const link = appSettings.sharedFolderLink || 'https://drive.google.com/drive/folders/1QCxirCdxxKAoazFJ3wP4L_LbJcwKqPWT?usp=sharing';
     if (window.pywebview) {
         window.pywebview.api.open_url(link);
     } else {
@@ -1595,6 +2150,21 @@ document.getElementById('share-configure').addEventListener('click', () => {
         alert("Share link updated successfully!");
     }
 });
+
+// --- API Key Menu Logic ---
+const setApiKeyBtn = document.getElementById('menu-set-api-key');
+if (setApiKeyBtn) {
+    setApiKeyBtn.addEventListener('click', () => {
+        const currentKey = appSettings.geminiApiKey || '';
+        const newKey = prompt("Enter your Gemini API Key:\n(You can get a free one from Google AI Studio)", currentKey);
+        if (newKey !== null) {
+            appSettings.geminiApiKey = newKey.trim();
+            saveSettings();
+            if (window.pywebview) window.pywebview.api.set_api_key(appSettings.geminiApiKey);
+            alert("API Key updated successfully!");
+        }
+    });
+}
 
 // --- View Menu Logic ---
 function toggleFocusMode() {
@@ -1616,6 +2186,7 @@ function togglePageNumbers() {
     appSettings.showPageNumbers = !appSettings.showPageNumbers;
     applySettingsToUI();
     saveSettings();
+    updateStats(); // Force overlay refresh instantly
 }
 const pageNumbersBtn = document.getElementById('view-toggle-page-numbers');
 if (pageNumbersBtn) {
@@ -1646,6 +2217,16 @@ function toggleWordCount() {
 const wordCountBtn = document.getElementById('view-toggle-word-count');
 if (wordCountBtn) {
     wordCountBtn.addEventListener('click', toggleWordCount);
+}
+
+function toggleColorCodes() {
+    appSettings.showColorCodes = !appSettings.showColorCodes;
+    applySettingsToUI();
+    saveSettings();
+}
+const colorCodesBtn = document.getElementById('view-toggle-color-codes');
+if (colorCodesBtn) {
+    colorCodesBtn.addEventListener('click', toggleColorCodes);
 }
 
 function toggleDialogueFilter() {
@@ -2209,9 +2790,14 @@ function updateMiniToolbarState() {
             document.getElementById('mini-align-center').classList.add('active');
         } else if (p.classList.contains('align-right')) {
             document.getElementById('mini-align-right').classList.add('active');
-        } else {
-            // Left is default, so we make it active if no other alignment is set
+        } else if (p.classList.contains('align-left')) {
             document.getElementById('mini-align-left').classList.add('active');
+        } else {
+            if (currentDocument === 'Title Page') {
+                document.getElementById('mini-align-center').classList.add('active');
+            } else {
+                document.getElementById('mini-align-left').classList.add('active');
+            }
         }
     }
 }
@@ -2223,13 +2809,35 @@ function updateMiniToolbarState() {
     });
 });
 
+// --- Toggle Case Logic ---
+function toggleCase() {
+    const sel = window.getSelection();
+    if (!sel.isCollapsed && editor.contains(sel.anchorNode)) {
+        const text = sel.toString();
+        const newText = text === text.toUpperCase() 
+            ? text.toLowerCase().replace(/(^\s*[a-z]|[.!?]\s*[a-z])/g, c => c.toUpperCase()) 
+            : text.toUpperCase();
+        document.execCommand('insertText', false, newText);
+        triggerBackup();
+        updateStats();
+    }
+}
+
+const caseToggleBtn = document.getElementById('mini-case-toggle');
+if (caseToggleBtn) {
+    caseToggleBtn.addEventListener('mousedown', e => {
+        e.preventDefault();
+        toggleCase();
+    });
+}
+
 ['left', 'center', 'right'].forEach(align => {
     document.getElementById(`mini-align-${align}`).addEventListener('mousedown', e => {
         e.preventDefault();
         const p = getCurrentParagraph();
         if (p) {
-            p.classList.remove('align-center', 'align-right');
-            if (align !== 'left') { // left is the default, so we only add classes for others
+            p.classList.remove('align-center', 'align-right', 'align-left');
+            if (align !== 'left' || currentDocument === 'Title Page') { 
                 p.classList.add(`align-${align}`);
             }
             updateMiniToolbarState();
@@ -2331,23 +2939,46 @@ window.restoreSnapshot = (id) => {
 // --- Sidebar Navigation & Scenes List Logic ---
 const navProjectBtn = document.getElementById('nav-project-btn');
 const navScenesBtn = document.getElementById('nav-scenes-btn');
+const navNotesBtn = document.getElementById('nav-notes-btn');
 const sidebarProjectView = document.getElementById('sidebar-project-view');
 const sidebarScenesView = document.getElementById('sidebar-scenes-view');
+const sidebarNotesView = document.getElementById('sidebar-notes-view');
 
-if (navProjectBtn && navScenesBtn) {
+if (navProjectBtn && navScenesBtn && navNotesBtn) {
     navProjectBtn.addEventListener('click', () => {
         navProjectBtn.classList.add('active');
         navScenesBtn.classList.remove('active');
+        navNotesBtn.classList.remove('active');
         sidebarProjectView.style.display = 'flex';
         sidebarScenesView.style.display = 'none';
+        sidebarNotesView.style.display = 'none';
     });
 
     navScenesBtn.addEventListener('click', () => {
         navScenesBtn.classList.add('active');
         navProjectBtn.classList.remove('active');
+        navNotesBtn.classList.remove('active');
         sidebarProjectView.style.display = 'none';
         sidebarScenesView.style.display = 'flex';
+        sidebarNotesView.style.display = 'none';
         buildScenesList();
+    });
+
+    navNotesBtn.addEventListener('click', () => {
+        navNotesBtn.classList.add('active');
+        navProjectBtn.classList.remove('active');
+        navScenesBtn.classList.remove('active');
+        sidebarProjectView.style.display = 'none';
+        sidebarScenesView.style.display = 'none';
+        sidebarNotesView.style.display = 'flex';
+    });
+}
+
+const localNotesArea = document.getElementById('local-notes-area');
+if (localNotesArea) {
+    localNotesArea.value = localStorage.getItem('reelscript_local_notes') || '';
+    localNotesArea.addEventListener('input', () => {
+        localStorage.setItem('reelscript_local_notes', localNotesArea.value);
     });
 }
 
@@ -2382,6 +3013,8 @@ document.getElementById('ctx-ai-scene-check').addEventListener('mousedown', asyn
     const startIndex = paragraphs.indexOf(scene);
     if (startIndex === -1) return;
     
+    window.currentAiReportName = (appSettings.projectName || 'Untitled Project') + ' - ' + (scene.textContent || 'Untitled Scene').toUpperCase();
+    
     let endIndex = paragraphs.length;
     for (let i = startIndex + 1; i < paragraphs.length; i++) {
         if (paragraphs[i].classList.contains('scene-heading')) { endIndex = i; break; }
@@ -2394,7 +3027,7 @@ document.getElementById('ctx-ai-scene-check').addEventListener('mousedown', asyn
     syncText.textContent = "Scene analysis complete";
     
     const formattedResult = result.replace(/Line#(\d+)/gi, '<a href="#" onclick="scrollToLine($1); return false;" style="color: #3b82f6; text-decoration: underline;">Line#$1</a>');
-    document.getElementById('ai-analysis-content').innerHTML = `<div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #36424e;"><strong>🎬 Scene Analysis: ${scene.textContent || 'Untitled Scene'}</strong></div>` + formattedResult;
+    document.getElementById('ai-analysis-content').innerHTML = `<div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #36424e;"><strong>🎬 Scene Analysis: ${(scene.textContent || 'Untitled Scene').toUpperCase()}</strong></div>` + formattedResult;
     document.getElementById('ai-report-sidebar').style.display = 'flex';
 });
 
@@ -2422,7 +3055,7 @@ window.buildScenesList = function() {
         div.style.overflow = 'hidden';
         div.style.textOverflow = 'ellipsis';
         div.style.display = 'block'; 
-        div.innerHTML = `<span style="font-size: 12px; margin-right: 8px;">🎬</span> ${scene.textContent || 'Untitled Scene'}`;
+        div.innerHTML = `<span style="font-size: 12px; margin-right: 8px;">🎬</span> ${(scene.textContent || 'Untitled Scene').toUpperCase()}`;
         
         div.addEventListener('click', () => {
             // 1. Scroll the script down to the specific element

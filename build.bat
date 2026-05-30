@@ -3,10 +3,13 @@ echo Installing required build tools and dependencies...
 pip install pyinstaller fpdf pyspellchecker pywebview
 
 echo.
-echo Building KindredScript Pro into a single executable...
+echo Building ReelScript 1.0 into a single executable...
 echo This may take a couple of minutes. Please wait...
 
 pyinstaller --noconfirm --onefile --windowed ^
+  --icon "movie-icon.ico" ^
+  --add-data "movie-icon.ico;." ^
+  --add-data "movie-icon.png;." ^
   --add-data "index.html;." ^
   --add-data "styles.css;." ^
   --add-data "script.js;." ^
@@ -16,7 +19,7 @@ pyinstaller --noconfirm --onefile --windowed ^
   --hidden-import editor ^
   --hidden-import tkinter ^
   --hidden-import tkinter.filedialog ^
-  desktop.pyw
+  reelscript.pyw
 
 echo.
 echo Build complete! 

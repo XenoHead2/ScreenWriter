@@ -1,0 +1,211 @@
+========================================================================
+                   REELSCRIPT 1.0 - COMPLETE USER MANUAL
+========================================================================
+
+Welcome to ReelScript! This guide covers everything you need to know to 
+write, edit, collaborate, and use the built-in AI assistant. 
+
+Please read through this manual, especially the "Collaboration & Revisions" 
+section, to ensure smooth file sharing.
+
+
+========================================================================
+ 1. INSTALLATION & FIRST STEPS
+========================================================================
+
+1. INSTALLING THE APP:
+   - Right-click the "install.bat" file and select "Run as Administrator".
+   - This is required so Windows can associate the new ".rsp" (ReelScript 
+     Project) files with the application.
+   - Once installed, you will find a ReelScript shortcut on your Desktop.
+
+2. SET UP YOUR AUTHOR PROFILE (CRUCIAL):
+   Before you start editing, you need to tell ReelScript who you are so 
+   your edits are properly tagged.
+   - Open ReelScript.
+   - Click "Customize" in the top menu -> "Author Profile & Revision Color".
+   - Type in your Name.
+   - Click the color box to pick a specific color for your edits (e.g., 
+     Blue, Purple, Green). 
+   - Click "Save Profile". 
+
+
+========================================================================
+ 2. COLLABORATION & REVISIONS (HOW WE WORK TOGETHER)
+========================================================================
+
+We will be trading a single ".rsp" (ReelScript Project) file back and forth. 
+To make sure we don't accidentally overwrite each other's work without 
+noticing, ReelScript has a built-in Revision Tracker.
+
+TURNING ON REVISION TRACKING:
+Whenever you sit down to make edits to my script:
+1. Click "Revisions" in the top menu.
+2. Click "Track Revisions".
+3. A checkmark will appear next to it indicating it is ON.
+
+WHAT HAPPENS WHEN TRACKING IS ON?
+Any time you change a word, delete a sentence, or add a new line, ReelScript 
+will automatically place a colored asterisk (*) next to that line. 
+- The asterisk will be in the color you picked in your Author Profile.
+- If I hover my mouse over your asterisk, a tooltip will pop up showing 
+  your name, so I know exactly who made the change.
+
+LEAVING REVISION NOTES:
+If you want to explain WHY you changed something, or leave a comment on a 
+specific line without changing the script itself:
+1. Right-click the colored asterisk (*) next to the line.
+2. Select "📝 Note" from the menu.
+3. ReelScript will automatically copy the line, attach your name, and jump 
+   you to the "Revision Notes" document where you can type your thoughts. 
+   I can read this document when I open the file.
+
+APPROVING CHANGES:
+If I make a change and you want to "Approve" it (removing my asterisk so 
+it becomes a permanent, normal part of the script):
+1. Right-click my asterisk.
+2. Select "✅ Approve". The asterisk will vanish.
+
+HOW TO GET YOUR EDITS BACK TO ME:
+1. When you are done editing, click "File" -> "Save Project".
+2. Click "Share" in the top menu -> "Open Shared Google Folder".
+3. This will open our shared Google Drive folder in your web browser.
+4. Drag and drop the saved ".rsp" file from your computer into that Google 
+   Drive folder to overwrite the old one.
+
+
+========================================================================
+ 3. THE INTERFACE & WRITING
+========================================================================
+
+THE LEFT SIDEBAR:
+On the far left, you will see three main icons:
+- 📋 Script: Shows your Project Documents (Default Document, Revision Notes, 
+  and Title Page). Click these to switch between them.
+- 🎬 Scenes: A dynamically generated list of every Scene Heading in the 
+  script. Click a scene to instantly jump to it.
+- 💬 My Notes: A PRIVATE scratchpad. Anything you type here stays strictly 
+  on your computer. It does NOT save into the shared project file. Use this 
+  for your own personal brainstorming.
+
+SMART FORMATTING (TAB & ENTER):
+You do not need to click formatting buttons while typing. The editor knows 
+standard screenplay formatting:
+- If you are on a Scene Heading and press Enter, it drops to Action.
+- If you are on Action and press Tab, it jumps to Character.
+- If you type a Character and press Enter, it jumps to Dialogue.
+- If you are in Dialogue and press Enter, it jumps back to Character.
+- Pressing Enter on an empty Action line jumps to Character.
+- Pressing Enter in the middle of a sentence perfectly splits the text in two.
+
+HOTKEYS:
+Ctrl+1 = Scene Heading      Ctrl+5 = Dialogue
+Ctrl+2 = Action             Ctrl+6 = Transition
+Ctrl+3 = Character          Ctrl+7 = Shot
+Ctrl+4 = Parenthetical      Ctrl+Enter = Hard Page Break
+
+
+========================================================================
+ 4. THE AI ASSISTANT
+========================================================================
+
+ReelScript is connected directly to Google's Gemini AI to act as a 
+co-writer and developmental editor.
+
+1. GETTING AI SUGGESTIONS (Brainstorming)
+   - Highlight a line of dialogue, an action line, or a whole paragraph.
+   - Click the "💡 Suggest" button in the top toolbar (or Right-Click -> 
+     Get AI Suggestion).
+   - A draggable window will appear with ideas, rewrites, and suggestions 
+     based on the text you highlighted.
+
+2. AI AUTO-FIX (Grammar & Flow)
+   - Highlight a clunky sentence.
+   - Right-click and select "✨ AI Auto-Fix Selection".
+   - The AI will rewrite the sentence for better flow and perfect grammar 
+     right before your eyes.
+
+3. SCENE AI ANALYSIS
+   - Want feedback on just one specific scene?
+   - Open the "🎬 Scenes" sidebar on the left.
+   - Right-click the scene you want feedback on -> "🎬 AI Check Scene" 
+     (Or put your cursor in the scene and click "🎬 Scene AI" in the toolbar).
+   - The AI will read the scene and generate a detailed report on pacing, 
+     dialogue, and formatting, referencing specific line numbers.
+
+4. FULL SCRIPT ANALYSIS
+   - Click "Reports" in the top menu -> "🤖 AI Script Analysis".
+   - The AI will read the entire script and give you a comprehensive 
+     developmental edit. (This takes about 20-30 seconds).
+   - Line numbers in the AI reports are clickable! Click "Line#45" in the 
+     report, and the editor will instantly scroll to that exact line and 
+     highlight it for you.
+
+
+========================================================================
+ 5. BACKUPS & AUTO-SAVE (NEVER LOSE WORK)
+========================================================================
+
+ReelScript has a hyper-aggressive backup system. To configure it:
+Click "File" -> "Manage Backups & Auto-Save" (or Ctrl+Shift+S).
+
+1. AUTO-SAVE INTERVAL:
+   Choose how often the app saves in the background (default is 5 mins). 
+   It also auto-saves every time you pause typing for 1 second.
+
+2. LOCAL BACKUP FOLDER:
+   By default, backups are saved to your "Documents/ReelScript" folder.
+
+3. CLOUD BACKUP FOLDER (Highly Recommended):
+   You can select a secondary folder (like your personal Google Drive or 
+   Dropbox folder) for ReelScript to save duplicate backups into.
+
+4. MAX BACKUP LIMIT:
+   To prevent eating up hard drive space, ReelScript limits backups to 5 
+   per folder. When it saves the 6th backup, it silently deletes the oldest 
+   one. You can change this limit in the Backup menu.
+
+MANUAL SNAPSHOTS:
+If you are about to rewrite a huge section and want to save a permanent 
+"save state" you can revert to if you mess up:
+- Click "Revisions" -> "Manage Snapshots".
+- Type a name (e.g., "Before the big rewrite") and click "Create Snapshot".
+- You can restore this exact state at any time.
+
+
+========================================================================
+ 6. USEFUL TOOLS & FEATURES
+========================================================================
+
+CHARACTER FILTER & RENAME:
+- Tools -> Character Filter: Hides the entire script except for the 
+  dialogue of the characters you select. Great for reading a character's 
+  arc back-to-back.
+- Tools -> Rename Character: Globally renames a character's headers AND 
+  smart-replaces their name anywhere it appears in dialogue/action lines.
+
+FIND & REPLACE:
+- Edit -> Find & Replace (Ctrl+F). Standard search tool with Match Case 
+  and Replace All options.
+
+SPELLCHECK:
+- Tools -> Check Spelling. 
+- ReelScript uses a custom dictionary. It ignores standard screenplay 
+  abbreviations (INT/EXT) but will catch typos. 
+- Click "Add to Dict" to teach it custom sci-fi/fantasy names so it stops 
+  flagging them.
+
+FOCUS & DARK MODE:
+- View -> Toggle Focus Mode (F11): Hides all menus and UI elements so you 
+  can just write.
+- Customize -> Dark Mode: Switches the white page to a dark slate gray to 
+  save your eyes at night.
+
+EXPORTING:
+- File -> Export PDF: Generates a perfectly formatted, industry-standard 
+  PDF, including your Title Page.
+- File -> Export Final Draft (.fdx): If you ever need to send the script 
+  to a producer or agent who demands Final Draft format, this will generate 
+  a perfect native .fdx file.
+
+Happy Writing!

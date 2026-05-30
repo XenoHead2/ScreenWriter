@@ -5,7 +5,7 @@ a = Analysis(
     ['desktop.pyw'],
     pathex=[],
     binaries=[],
-    datas=[('index.html', '.'), ('styles.css', '.'), ('script.js', '.')],
+    datas=[('movie-icon.ico', '.'), ('movie-icon.png', '.'), ('index.html', '.'), ('styles.css', '.'), ('script.js', '.')],
     hiddenimports=['webview', 'fpdf', 'spellchecker', 'editor', 'tkinter', 'tkinter.filedialog'],
     hookspath=[],
     hooksconfig={},
@@ -35,4 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=['movie-icon.ico'],
 )
